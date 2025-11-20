@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Menu, User, Globe } from 'lucide-react';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onProfileClick?: () => void;
+  onLogoClick?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onProfileClick, onLogoClick }) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -16,7 +21,7 @@ export const Header: React.FC = () => {
     <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 py-4' : 'bg-transparent py-6'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center cursor-pointer group">
+        <div className="flex items-center cursor-pointer group" onClick={onLogoClick}>
           <div className="text-white font-black text-3xl tracking-tighter group-hover:text-brand-500 transition-colors">CAOS</div>
         </div>
 
@@ -44,7 +49,10 @@ export const Header: React.FC = () => {
           <div className="hover:bg-zinc-800 p-2 rounded-full cursor-pointer transition-colors">
             <Globe size={18} />
           </div>
-          <div className="flex items-center gap-2 border border-zinc-700 bg-zinc-900 rounded-full p-1 pl-3 hover:border-zinc-500 transition-colors cursor-pointer">
+          <div 
+            onClick={onProfileClick}
+            className="flex items-center gap-2 border border-zinc-700 bg-zinc-900 rounded-full p-1 pl-3 hover:border-zinc-500 transition-colors cursor-pointer"
+          >
             <Menu size={18} />
             <div className="bg-zinc-700 text-white rounded-full p-1">
               <User size={18} fill="currentColor" className="text-zinc-400" />

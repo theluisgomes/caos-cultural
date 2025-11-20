@@ -5,8 +5,37 @@ export enum ListingType {
   EXPERIENCE = 'EXPERIENCE'
 }
 
+export type ViewState = 'HOME' | 'PROFILE' | 'ONBOARDING' | 'EDIT_PROFILE' | 'LISTING_DETAILS';
+
+export interface UserStats {
+  followers: number;
+  following: number;
+  eventsAttended: number;
+  projectsCreated: number;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email?: string;
+  handle: string;
+  role: 'ARTIST' | 'ORGANIZER' | 'VISITOR';
+  bio: string;
+  location: string;
+  avatarUrl: string;
+  coverUrl: string;
+  disciplines: string[]; // e.g. ['Photography', 'DJ', 'Visual Arts']
+  stats: UserStats;
+  socialLinks?: {
+    instagram?: string;
+    portfolio?: string;
+  };
+  joinDate: string;
+}
+
 export interface Listing {
   id: string;
+  authorId?: string; // FK to User
   type: ListingType;
   title: string;
   subtitle: string; // Location for events/spaces, Profession for artists

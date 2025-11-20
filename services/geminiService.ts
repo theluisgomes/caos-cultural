@@ -1,7 +1,29 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Listing, ListingType } from "../types";
+import { Listing, ListingType, UserProfile } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+export const fetchUserProfile = async (): Promise<UserProfile> => {
+  // Simulate fetching the currently logged in user
+  return {
+    id: "u1",
+    name: "Lívia K.",
+    handle: "@liviak_art",
+    role: "ARTIST",
+    bio: "Explorando a dissonância cognitiva através da luz e som. Artista multimídia baseada em São Paulo. Criadora do coletivo NOITE.",
+    location: "São Paulo, SP",
+    avatarUrl: "https://picsum.photos/seed/avatar2/200/200",
+    coverUrl: "https://picsum.photos/seed/coverArt/1200/400",
+    disciplines: ["Visual Arts", "Projection Mapping", "Techno"],
+    stats: {
+      followers: 1204,
+      following: 450,
+      eventsAttended: 89,
+      projectsCreated: 12
+    },
+    joinDate: "Membro desde 2022"
+  };
+};
 
 export const fetchCulturalListings = async (category: string): Promise<Listing[]> => {
   // In a real scenario, this might fetch from a DB, but we use Gemini to generate cool mock data

@@ -4,11 +4,15 @@ import { Star, Heart } from 'lucide-react';
 
 interface ListingCardProps {
   listing: Listing;
+  onClick?: () => void;
 }
 
-export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
+export const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
   return (
-    <div className="group cursor-pointer flex flex-col gap-4 relative">
+    <div 
+      onClick={onClick}
+      className="group cursor-pointer flex flex-col gap-4 relative"
+    >
       {/* Image Container */}
       <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-zinc-900">
         <img 
@@ -19,7 +23,13 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
-        <button className="absolute top-3 right-3 p-2 text-white hover:scale-110 transition-transform z-10">
+        <button 
+          className="absolute top-3 right-3 p-2 text-white hover:scale-110 transition-transform z-10"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Handle save/favorite logic here
+          }}
+        >
           <Heart size={22} className="drop-shadow-md stroke-white hover:fill-white transition-colors" />
         </button>
         
