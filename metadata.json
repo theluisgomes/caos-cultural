@@ -1,0 +1,7 @@
+{
+  "name": "CAOS Cultural",
+  "description": "Cultural Artistic Organization System - A platform to map, connect, and discover cultural events, spaces, and artists.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
