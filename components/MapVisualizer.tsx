@@ -33,8 +33,11 @@ export const MapVisualizer: React.FC<MapVisualizerProps> = ({ listings, onClose 
 
       {/* Pins */}
       {listings.map((listing) => {
-        const top = listing.coordinates?.lat || 50;
-        const left = listing.coordinates?.lng || 50;
+        // Use a deterministic spread based on listing id when coordinates are missing
+        const fallbackTop = 20 + (listing.id.charCodeAt(0) % 60);
+        const fallbackLeft = 15 + (listing.id.charCodeAt(listing.id.length - 1) % 70);
+        const top = listing.coordinates?.lat ?? fallbackTop;
+        const left = listing.coordinates?.lng ?? fallbackLeft;
         const isActive = activeId === listing.id;
 
         return (

@@ -19,7 +19,7 @@ const App: React.FC = () => {
   const [category, setCategory] = useState('all');
   const [showMap, setShowMap] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
-  
+
   // Auth & User State
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -30,16 +30,13 @@ const App: React.FC = () => {
   const [userListings, setUserListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Init Session
+  // Init Session — must resolve before rendering views
   useEffect(() => {
-    const initSession = () => {
-      const session = mockAuth.getSession();
-      if (session) {
-        setUser(session);
-      }
-      setIsCheckingAuth(false);
-    };
-    initSession();
+    const session = mockAuth.getSession();
+    if (session) {
+      setUser(session);
+    }
+    setIsCheckingAuth(false);
   }, []);
 
   // Load Content
@@ -48,21 +45,20 @@ const App: React.FC = () => {
       setLoading(true);
       const fetchedListings = await fetchCulturalListings(category);
       setListings(fetchedListings);
-      
-      // Mock user specific listings
+
       setUserListings([
         {
-            id: 'ul1',
-            type: ListingType.EVENT,
-            title: 'Projeção Urbana: A Luz',
-            subtitle: 'Centro Histórico',
-            description: 'Uma intervenção visual no centro.',
-            imageUrl: 'https://picsum.photos/seed/proj/600/400',
-            price: 'Grátis',
-            rating: 5.0,
-            reviews: 42,
-            date: '12 Dez',
-            tags: ['Visual Art']
+          id: 'ul1',
+          type: ListingType.EVENT,
+          title: 'Projeção Urbana: A Luz',
+          subtitle: 'Centro Histórico',
+          description: 'Uma intervenção visual no centro.',
+          imageUrl: 'https://picsum.photos/seed/proj/600/400',
+          price: 'Grátis',
+          rating: 5.0,
+          reviews: 42,
+          date: '12 Dez',
+          tags: ['Visual Art'],
         },
       ]);
       setLoading(false);
@@ -76,7 +72,7 @@ const App: React.FC = () => {
     if (loggedUser) {
       setUser(loggedUser);
       setIsLoginOpen(false);
-      setCurrentView('HOME'); // or PROFILE
+      setCurrentView('HOME');
     }
   };
 
@@ -84,14 +80,13 @@ const App: React.FC = () => {
     const newUser = await mockAuth.register(email, 'password');
     setUser(newUser);
     setIsLoginOpen(false);
-    setCurrentView('ONBOARDING'); // Redirect to onboarding
+    setCurrentView('ONBOARDING');
   };
 
   const handleGoogleLogin = async () => {
     const googleUser = await mockAuth.googleLogin();
     setUser(googleUser);
     setIsLoginOpen(false);
-    // If bio is empty, assume new user -> onboarding
     if (!googleUser.bio) {
       setCurrentView('ONBOARDING');
     } else {
@@ -120,15 +115,14 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-      mockAuth.logout();
-      setUser(null);
-      setCurrentView('HOME');
+    mockAuth.logout();
+    setUser(null);
+    setCurrentView('HOME');
   };
 
   const handleListingClick = (listing: Listing) => {
     setSelectedListing(listing);
     setCurrentView('LISTING_DETAILS');
-    // Scroll to top
     window.scrollTo(0, 0);
   };
 
@@ -137,19 +131,23 @@ const App: React.FC = () => {
     setCurrentView('HOME');
   };
 
-  // Views
+  // Show blank screen while checking auth to avoid flash of wrong content
+  if (isCheckingAuth) {
+    return <div className="min-h-screen bg-zinc-950" />;
+  }
+
   if (currentView === 'ONBOARDING' && user) {
     return <Onboarding user={user} onComplete={handleOnboardingComplete} />;
   }
 
   if (currentView === 'EDIT_PROFILE' && user) {
-      return (
-        <EditProfile 
-            user={user} 
-            onSave={handleProfileUpdate} 
-            onCancel={() => setCurrentView('PROFILE')} 
-        />
-      );
+    return (
+      <EditProfile
+        user={user}
+        onSave={handleProfileUpdate}
+        onCancel={() => setCurrentView('PROFILE')}
+      />
+    );
   }
 
   if (currentView === 'LISTING_DETAILS' && selectedListing) {
@@ -159,10 +157,11 @@ const App: React.FC = () => {
   const renderMainContent = () => {
     if (currentView === 'PROFILE' && user) {
       return (
-        <UserDashboard 
-            user={user} 
-            myListings={userListings} 
-            onEdit={() => setCurrentView('EDIT_PROFILE')}
+        <UserDashboard
+          user={user}
+          myListings={userListings}
+          onEdit={() => setCurrentView('EDIT_PROFILE')}
+          onLogout={handleLogout}
         />
       );
     }
@@ -179,7 +178,7 @@ const App: React.FC = () => {
               </span>
               <span className="block">vira Arte.</span>
             </h1>
-            
+
             <div className="mt-12 flex flex-col md:flex-row md:items-end justify-between gap-8">
               <p className="text-xl md:text-2xl text-zinc-400 max-w-lg font-light leading-relaxed">
                 Um ecossistema vivo para mapear, conectar e descobrir eventos, espaços e criadores.
@@ -205,31 +204,27 @@ const App: React.FC = () => {
                 </div>
               ))}
             </div>
+          ) : listings.length === 0 ? (
+            <div className="text-center py-20 border border-zinc-800 rounded-lg border-dashed">
+              <h2 className="text-3xl font-bold text-white mb-2">Vazio.</h2>
+              <p className="text-zinc-500">Ainda não há arte nesta categoria.</p>
+            </div>
           ) : (
-            <>
-              {listings.length === 0 ? (
-                <div className="text-center py-20 border border-zinc-800 rounded-lg border-dashed">
-                  <h2 className="text-3xl font-bold text-white mb-2">Vazio.</h2>
-                  <p className="text-zinc-500">Ainda não há arte nesta categoria.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
-                  {listings.map((listing) => (
-                    <ListingCard 
-                      key={listing.id} 
-                      listing={listing} 
-                      onClick={() => handleListingClick(listing)} 
-                    />
-                  ))}
-                </div>
-              )}
-            </>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
+              {listings.map((listing) => (
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                  onClick={() => handleListingClick(listing)}
+                />
+              ))}
+            </div>
           )}
         </main>
 
         {/* Floating Map Toggle */}
-        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-40">
-          <button 
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40">
+          <button
             onClick={() => setShowMap(true)}
             className="bg-white text-black px-6 py-3.5 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform flex items-center gap-2 font-bold text-sm tracking-wide"
           >
@@ -241,30 +236,28 @@ const App: React.FC = () => {
         {/* Map Modal */}
         {showMap && (
           <div className="fixed inset-0 z-[60] bg-zinc-950 animate-in fade-in duration-300">
-              <div className="h-full w-full relative">
-                  <MapVisualizer listings={listings} onClose={() => setShowMap(false)} />
-              </div>
+            <div className="h-full w-full relative">
+              <MapVisualizer listings={listings} onClose={() => setShowMap(false)} />
+            </div>
           </div>
         )}
       </>
     );
   };
 
-  if (isCheckingAuth) return <div className="min-h-screen bg-zinc-950"></div>;
-
   return (
     <div className="min-h-screen bg-zinc-950 font-sans text-zinc-100 selection:bg-brand-500 selection:text-white">
-      <Header 
-        onProfileClick={handleProfileClick} 
-        onLogoClick={() => setCurrentView('HOME')} 
+      <Header
+        onProfileClick={handleProfileClick}
+        onLogoClick={() => { setCurrentView('HOME'); window.scrollTo(0, 0); }}
       />
-      
+
       {renderMainContent()}
 
       <Footer />
 
-      <LoginModal 
-        isOpen={isLoginOpen} 
+      <LoginModal
+        isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
         onLogin={handleLogin}
         onRegister={handleRegister}

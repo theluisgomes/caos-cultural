@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { UserProfile, Listing, ListingType } from '../types';
-import { Settings, Share2, MapPin, Calendar, Grid, Bookmark, Plus } from 'lucide-react';
+import { UserProfile, Listing } from '../types';
+import { Settings, Share2, MapPin, Calendar, Grid, Bookmark, Plus, LogOut } from 'lucide-react';
 import { ListingCard } from './ListingCard';
 
 interface UserDashboardProps {
   user: UserProfile;
   myListings: Listing[];
   onEdit?: () => void;
+  onLogout?: () => void;
 }
 
-export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, onEdit }) => {
+export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, onEdit, onLogout }) => {
   const [activeTab, setActiveTab] = useState<'portfolio' | 'schedule' | 'saved'>('portfolio');
 
   return (
@@ -57,7 +58,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
               </div>
 
               <div className="flex gap-3">
-                <button 
+                <button
+                  onClick={onLogout}
+                  className="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white px-3 py-2 rounded-full font-medium transition-colors text-sm flex items-center gap-2"
+                  title="Sair"
+                >
+                  <LogOut size={16} />
+                </button>
+                <button
                     onClick={onEdit}
                     className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-full font-medium transition-colors text-sm flex items-center gap-2"
                 >

@@ -21,7 +21,7 @@ const categories = [
 
 export const CategoryBar: React.FC<CategoryBarProps> = ({ selected, onSelect }) => {
   return (
-    <div className="w-full bg-zinc-950 sticky top-0 z-40 border-b border-zinc-800">
+    <div className="w-full bg-zinc-950 sticky top-[68px] z-30 border-b border-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8 overflow-x-auto hide-scrollbar py-4">
           {categories.map((cat) => {

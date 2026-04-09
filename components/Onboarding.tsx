@@ -68,7 +68,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onComplete }) => {
       <div className="w-full max-w-2xl z-10">
         <div className="mb-12">
            <span className="text-brand-500 font-mono text-sm mb-2 block">PASSO 0{stepIndex + 1}</span>
-           <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none mb-4 animate-in slide-in-from-bottom-4 duration-500 key={stepIndex}">
+           <h1 key={stepIndex} className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none mb-4 animate-in slide-in-from-bottom-4 duration-500">
              {currentStep.question}
            </h1>
            <p className="text-zinc-500 text-lg font-light">{currentStep.sub}</p>
