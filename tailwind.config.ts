@@ -4,9 +4,8 @@ import animate from 'tailwindcss-animate';
 const config: Config = {
   content: [
     './index.html',
-    './*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './services/**/*.{ts,tsx}',
+    './index.tsx',
+    './src/**/*.{ts,tsx}',
   ],
   theme: {
     extend: {
@@ -22,6 +21,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        heading: ['Boldonse', 'Inter', 'sans-serif'],
       },
     },
   },

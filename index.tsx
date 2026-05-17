@@ -1,7 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
+import App from './src/App';
+import { initFirebaseAnalytics } from './src/lib/firebase';
+
+void initFirebaseAnalytics();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

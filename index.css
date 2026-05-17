@@ -5,12 +5,28 @@
 @layer base {
   body {
     font-family: 'Inter', sans-serif;
-    background-color: #09090b; /* zinc-950 */
-    color: #e4e4e7; /* zinc-200 */
+    background-color: #09090b;
+    color: #e4e4e7;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Boldonse for all headings */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Boldonse', 'Inter', sans-serif;
   }
 }
 
 @layer utilities {
+  .font-heading {
+    font-family: 'Boldonse', 'Inter', sans-serif;
+  }
+
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }

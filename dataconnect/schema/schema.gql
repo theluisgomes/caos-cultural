@@ -1,0 +1,49 @@
+type User @table {
+  firebaseAuthUid: String!
+  displayName: String!
+  email: String!
+  createdAt: Timestamp!
+  photoUrl: String
+  bio: String
+  location: String
+  interests: [String]
+}
+
+type CulturalListing @table {
+  title: String!
+  description: String!
+  type: String! # Using String for enum "Event", "Space", "Artist", "Experience"
+  locationName: String!
+  latitude: Float!
+  longitude: Float!
+  createdAt: Timestamp!
+  creator: User
+  imageUrl: String
+  website: String
+  contactEmail: String
+  startDate: Date
+  endDate: Date
+  startTime: String # Consider String for time as there's no dedicated Time type
+  endTime: String # Consider String for time as there's no dedicated Time type
+  priceRange: String
+  categories: [String]
+}
+
+type Review @table {
+  rating: Int!
+  createdAt: Timestamp!
+  comment: String
+  user: User!
+  listing: CulturalListing!
+}
+
+type Favorite @table(key: ["user", "listing"]) {
+  createdAt: Timestamp!
+  user: User!
+  listing: CulturalListing!
+}
+
+type Category @table {
+  name: String!
+  description: String
+}
