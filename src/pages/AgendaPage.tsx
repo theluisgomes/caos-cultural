@@ -4,6 +4,8 @@ import { Calendar, Flame, Plus, Snowflake } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAgenda } from '../hooks/useAgenda';
 import type { AgendaItem } from '../domain/agenda';
+import { useListings } from '../hooks/useListings';
+import { ListingType, type Listing } from '../types';
 
 type DatedAgendaItem = AgendaItem & { parsedStart: Date };
 
@@ -63,6 +65,26 @@ function getDatedItems(items: AgendaItem[]): DatedAgendaItem[] {
     .map(item => ({ ...item, parsedStart: new Date(item.startsAt) }))
     .filter(item => !Number.isNaN(item.parsedStart.getTime()))
     .sort((a, b) => a.parsedStart.getTime() - b.parsedStart.getTime());
+}
+
+function listingToAgendaItem(listing: Listing, userId: string): AgendaItem | null {
+  const startsAt = listing.meta?.startsAt;
+  if (!startsAt) return null;
+  return {
+    id: `platform_${listing.id}`,
+    agendaId: 'platform_events',
+    addedByUserId: userId,
+    eventId: listing.id,
+    customTitle: listing.title,
+    customLocation: listing.subtitle,
+    startsAt,
+    endsAt: null,
+    status: 'interested',
+    notes: '',
+    reminderMinutesBefore: null,
+    createdAt: startsAt,
+    updatedAt: startsAt,
+  };
 }
 
 interface AgendaHeatmapProps {
@@ -261,7 +283,30 @@ const AgendaHeatmap: React.FC<AgendaHeatmapProps> = ({ items }) => {
 
 export const AgendaPage: React.FC = () => {
   const { user } = useAuth();
-  const { data: items = [], isLoading } = useAgenda(user?.id);
+  const userId = user?.id ?? '';
+  const { data: savedItems = [], isLoading: isAgendaLoading } = useAgenda(user?.id);
+  const { data: eventListings = [], isLoading: isEventsLoading } = useListings('all', 'events');
+
+  const platformItems = useMemo(() => {
+    return eventListings
+      .filter(listing => listing.type === ListingType.EVENT)
+      .map(listing => listingToAgendaItem(listing, userId))
+      .filter((item): item is AgendaItem => item !== null);
+  }, [eventListings, userId]);
+
+  const items = useMemo(() => {
+    const byEventId = new Set(savedItems.map(item => item.eventId).filter((eventId): eventId is string => Boolean(eventId)));
+    const merged = [...savedItems];
+
+    for (const item of platformItems) {
+      if (item.eventId && byEventId.has(item.eventId)) continue;
+      merged.push(item);
+    }
+
+    return merged;
+  }, [savedItems, platformItems]);
+
+  const isLoading = isAgendaLoading || isEventsLoading;
 
   if (!user) return <Navigate to="/" replace />;
 
@@ -293,7 +338,7 @@ export const AgendaPage: React.FC = () => {
         ) : items.length === 0 ? (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
             <div className="rounded-lg border border-dashed border-zinc-800 p-12 text-center text-zinc-500">
-              Salve eventos nos cards para montar sua agenda.
+              Ainda não encontramos eventos publicados para exibir na agenda.
             </div>
             <AgendaHeatmap items={items} />
           </div>
@@ -302,7 +347,7 @@ export const AgendaPage: React.FC = () => {
             <section className="space-y-8">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-brand-500">Eventos salvos</p>
-                <h2 className="mt-1 text-2xl font-black tracking-tight text-white">{items.length} item(ns) na sua agenda</h2>
+                <h2 className="mt-1 text-2xl font-black tracking-tight text-white">{items.length} item(ns) entre salvos + plataforma</h2>
               </div>
               {groupedDays.map(day => (
                 <div key={day.key}>
