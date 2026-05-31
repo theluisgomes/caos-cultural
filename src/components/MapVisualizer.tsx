@@ -17,6 +17,7 @@ const TYPE_META: Record<ListingType, { color: string; label: string; Icon: React
   [ListingType.SPACE]:      { color: '#9333ea', label: 'Espaço',     Icon: Building2 },
   [ListingType.ARTIST]:     { color: '#10b981', label: 'Artista',    Icon: Users },
   [ListingType.EXPERIENCE]: { color: '#f59e0b', label: 'Experiência',Icon: Sparkles },
+  [ListingType.WORK]:      { color: '#f59e0b', label: 'Obra',       Icon: Sparkles },
 };
 
 // Real coordinates spread across Brazil's cultural hubs

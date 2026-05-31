@@ -11,7 +11,8 @@ export enum ListingType {
   EVENT = 'EVENT',
   SPACE = 'SPACE',
   ARTIST = 'ARTIST',
-  EXPERIENCE = 'EXPERIENCE'
+  EXPERIENCE = 'EXPERIENCE',
+  WORK = 'WORK',
 }
 
 export interface UserStats {
@@ -26,7 +27,7 @@ export interface UserProfile {
   name: string;
   email?: string;
   handle: string;
-  role: 'ARTIST' | 'ORGANIZER' | 'VISITOR';
+  role: 'ARTIST' | 'ORGANIZER' | 'VISITOR' | 'SUPER_ADMIN';
   bio: string;
   location: string;
   avatarUrl: string;
@@ -48,6 +49,8 @@ export interface Listing {
   subtitle: string;
   description: string;
   imageUrl: string;
+  /** Cover image for a related work (hybrid artist cards). */
+  workImageUrl?: string;
   price?: string;
   rating: number;
   reviews: number;
@@ -57,6 +60,23 @@ export interface Listing {
     lng: number;
   };
   tags: string[];
+  /** Filter/ranking metadata from domain entities. */
+  meta?: {
+    agentKind?: string;
+    city?: string;
+    neighborhood?: string;
+    spaceKind?: string;
+    eventKind?: string;
+    startsAt?: string;
+    priceBRL?: number | null;
+    identity?: {
+      ageRange?: string | null;
+      gender?: string | null;
+      race?: string | null;
+      sexuality?: string | null;
+    };
+  };
+  sponsored?: boolean;
 }
 
 export interface Category {

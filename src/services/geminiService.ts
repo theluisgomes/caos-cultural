@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Listing, ListingType, UserProfile } from "../types";
+import { getLacumbucaListings } from "./lacumbucaListings";
 
 const apiKey = process.env.API_KEY;
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
@@ -27,12 +28,16 @@ export const fetchUserProfile = async (): Promise<UserProfile> => {
 };
 
 export const fetchCulturalListings = async (category: string): Promise<Listing[]> => {
+  const lacumbucaListings = getLacumbucaListings();
+  const shouldShowLacumbuca = category === 'all' || category === 'music' || category === 'social';
+
   // In a real scenario, this might fetch from a DB, but we use Gemini to generate cool mock data
   // to make the prototype feel alive with "real" artistic content.
 
   if (!ai) {
     console.warn("No Gemini API key found — using fallback data.");
-    return getFallbackListings();
+    const fallback = getFallbackListings(category);
+    return shouldShowLacumbuca ? [...lacumbucaListings, ...fallback] : fallback;
   }
 
   try {
@@ -91,20 +96,23 @@ export const fetchCulturalListings = async (category: string): Promise<Listing[]
     const data = JSON.parse(response.text || "[]");
     
     // Post-process to ensure valid types and image urls
-    return data.map((item: any) => ({
+    const generatedListings = data.map((item: any) => ({
       ...item,
       imageUrl: `https://picsum.photos/seed/${item.id}/600/400`, // Ensure image works
       type: item.type as ListingType
     }));
 
+    return shouldShowLacumbuca ? [...lacumbucaListings, ...generatedListings] : generatedListings;
+
   } catch (error) {
     console.error("Failed to fetch content from Gemini:", error);
-    return getFallbackListings();
+    const fallback = getFallbackListings(category);
+    return shouldShowLacumbuca ? [...lacumbucaListings, ...fallback] : fallback;
   }
 };
 
-function getFallbackListings(): Listing[] {
-  return [
+export function getFallbackListings(category = 'all'): Listing[] {
+  const listings: Listing[] = [
     {
       id: "1",
       type: ListingType.EVENT,
@@ -117,7 +125,8 @@ function getFallbackListings(): Listing[] {
       reviews: 124,
       date: "Esta Sexta",
       coordinates: { lat: 40, lng: 60 },
-      tags: ["Music", "Jazz"]
+      tags: ["Music", "Jazz"],
+      meta: { startsAt: new Date(Date.now() + 86400000 * 2).toISOString(), eventKind: 'concert' },
     },
     {
       id: "2",
@@ -171,7 +180,9 @@ function getFallbackListings(): Listing[] {
       reviews: 201,
       date: "Hoje, 20:00",
       coordinates: { lat: 35, lng: 70 },
-      tags: ["Arte Digital", "Exposição"]
+      tags: ["Arte Digital", "Exposição"],
+      sponsored: true,
+      meta: { startsAt: new Date(Date.now() + 86400000 * 5).toISOString(), eventKind: 'exhibition' },
     },
     {
       id: "6",
@@ -211,7 +222,59 @@ function getFallbackListings(): Listing[] {
       reviews: 318,
       date: "Sáb, 29 Nov",
       coordinates: { lat: 70, lng: 25 },
-      tags: ["Techno", "Rave", "Música"]
+      tags: ["Techno", "Rave", "Música"],
+      meta: { startsAt: new Date(Date.now() + 86400000 * 12).toISOString(), eventKind: 'party' },
+    },
+    {
+      id: "9",
+      type: ListingType.EVENT,
+      title: "Tina – O Musical",
+      subtitle: "Teatro Santander",
+      description: "A vida e a música de Tina Turner em produção de grande escala.",
+      imageUrl: "https://picsum.photos/seed/tina-musical/600/400",
+      price: "R$ 120",
+      rating: 4.9,
+      reviews: 890,
+      date: "14 Ago",
+      coordinates: { lat: -23.55, lng: -46.63 },
+      tags: ["Teatro", "Musical"],
+      meta: { startsAt: new Date(Date.now() + 86400000 * 20).toISOString(), eventKind: 'theater' },
+    },
+    {
+      id: "10",
+      type: ListingType.EVENT,
+      title: "Festival Heineken®",
+      subtitle: "Memorial da América Latina",
+      description: "Line-up nacional com experiências gastronômicas e arte.",
+      imageUrl: "https://picsum.photos/seed/heineken-fest/600/400",
+      price: "R$ 180",
+      rating: 4.6,
+      reviews: 412,
+      date: "22 Ago",
+      coordinates: { lat: -23.53, lng: -46.67 },
+      tags: ["Festival", "Música"],
+      meta: { startsAt: new Date(Date.now() + 86400000 * 28).toISOString(), eventKind: 'festival' },
+    },
+    {
+      id: "11",
+      type: ListingType.EVENT,
+      title: "Stand-up: Noites de SP",
+      subtitle: "Espaço Unibanco",
+      description: "Comédia ao vivo com os nomes mais quentes da cena paulistana.",
+      imageUrl: "https://picsum.photos/seed/standup/600/400",
+      price: "R$ 45",
+      rating: 4.5,
+      reviews: 156,
+      date: "30 Ago",
+      coordinates: { lat: -23.56, lng: -46.66 },
+      tags: ["Comédia", "Stand-up"],
+      meta: { startsAt: new Date(Date.now() + 86400000 * 35).toISOString(), eventKind: 'show' },
     },
   ];
+
+  if (category === 'spaces') return listings.filter(listing => listing.type === ListingType.SPACE);
+  if (category === 'visual') return listings.filter(listing => listing.tags.some(tag => /arte|visual|digital|exposição/i.test(tag)));
+  if (category === 'workshops') return listings.filter(listing => listing.type === ListingType.EXPERIENCE);
+  if (category === 'music' || category === 'social') return listings.filter(listing => listing.tags.some(tag => /música|music|jazz|techno|rave/i.test(tag)));
+  return listings;
 }

@@ -12,7 +12,7 @@ import { getFunctions, type Functions } from 'firebase/functions';
  * When any required variable is missing, `isFirebaseConfigured()` is false
  * and the app falls back to `mockAuth` so local development still works.
  *
- * Cloud Functions region matches the project plan: `southamerica-east1`.
+ * Cloud Functions region: `southamerica-east1` (São Paulo).
  */
 
 const REQUIRED_KEYS = [
@@ -70,17 +70,13 @@ export function getStorageInstance(): FirebaseStorage {
   return getStorage(getFirebaseApp());
 }
 
-/** Callable / HTTPS triggers in `southamerica-east1` (Phase 0.4 seed, etc.) */
+/** Callable / HTTPS triggers in `southamerica-east1` */
 export function getFunctionsInstance(): Functions {
   return getFunctions(getFirebaseApp(), 'southamerica-east1');
 }
 
 let analyticsPromise: Promise<Analytics | null> | null = null;
 
-/**
- * Google Analytics (Firebase). Só disponível no browser e quando o SDK é suportado.
- * Use depois de `measurementId` estar em `VITE_FIREBASE_MEASUREMENT_ID`.
- */
 export function initFirebaseAnalytics(): Promise<Analytics | null> {
   if (!isFirebaseConfigured()) return Promise.resolve(null);
   const env = import.meta.env;

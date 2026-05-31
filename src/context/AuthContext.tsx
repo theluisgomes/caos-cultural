@@ -1,19 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import {
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  type User as FirebaseUser,
-} from 'firebase/auth';
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { mockAuth } from '../services/mockAuth';
+import { registerWithEmail, signInWithEmail, signInWithGoogle, signOutUser } from '../services/auth';
 import {
   ensureUserDocument,
   loadUserProfile,
   saveUserProfile,
 } from '../services/userProfileFirestore';
+import { ensureDefaultLists } from '../services/lists';
 import { isFirebaseConfigured, getAuthInstance, getFirestoreInstance } from '../lib/firebase';
 import { UserProfile } from '../types';
 
@@ -27,7 +21,7 @@ interface AuthContextValue {
   closeLogin: () => void;
   login: (email: string, password: string) => Promise<UserProfile | null>;
   register: (email: string, password: string) => Promise<UserProfile>;
-  googleLogin: () => Promise<UserProfile>;
+  googleLogin: () => Promise<UserProfile | null>;
   logout: () => void;
   updateProfile: (updated: UserProfile) => Promise<UserProfile>;
 }
@@ -38,6 +32,7 @@ async function syncFirebaseUser(fbUser: FirebaseUser | null): Promise<UserProfil
   if (!fbUser) return null;
   const db = getFirestoreInstance();
   await ensureUserDocument(db, fbUser);
+  await ensureDefaultLists(fbUser.uid);
   return loadUserProfile(db, fbUser.uid);
 }
 
@@ -50,7 +45,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (!useFirebase) {
-      setUser(mockAuth.getSession());
+      const session = mockAuth.getSession();
+      setUser(session);
+      if (session) ensureDefaultLists(session.id).catch(() => {});
       setIsCheckingAuth(false);
       return;
     }
@@ -83,9 +80,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         closeLogin();
         return logged;
       }
-      const auth = getAuthInstance();
-      await signInWithEmailAndPassword(auth, email, password);
-      const fbUser = auth.currentUser;
+      await signInWithEmail(email, password);
+      const fbUser = getAuthInstance().currentUser;
       if (!fbUser) return null;
       const profile = await syncFirebaseUser(fbUser);
       if (profile) setUser(profile);
@@ -103,9 +99,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         closeLogin();
         return created;
       }
-      const auth = getAuthInstance();
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
-      const profile = await syncFirebaseUser(cred.user);
+      const credUser = await registerWithEmail(email, password);
+      const profile = await syncFirebaseUser(credUser);
       if (!profile) throw new Error('Falha ao criar perfil.');
       setUser(profile);
       closeLogin();
@@ -121,11 +116,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       closeLogin();
       return g;
     }
-    const auth = getAuthInstance();
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    const cred = await signInWithPopup(auth, provider);
-    const profile = await syncFirebaseUser(cred.user);
+    const fbUser = await signInWithGoogle();
+    if (!fbUser) {
+      // Redirect flow was started; page navigation will continue the auth handshake.
+      return null;
+    }
+    const profile = await syncFirebaseUser(fbUser);
     if (!profile) throw new Error('Falha ao carregar perfil.');
     setUser(profile);
     closeLogin();
@@ -138,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       return;
     }
-    await signOut(getAuthInstance());
+    await signOutUser();
     setUser(null);
   }, [useFirebase]);
 

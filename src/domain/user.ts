@@ -15,7 +15,7 @@ export const TrustTier = z.enum([
 ]);
 export type TrustTier = z.infer<typeof TrustTier>;
 
-export const UserRole = z.enum(['member', 'admin', 'moderator']);
+export const UserRole = z.enum(['member', 'admin', 'moderator', 'super_admin']);
 export type UserRole = z.infer<typeof UserRole>;
 
 export const User = z.object({

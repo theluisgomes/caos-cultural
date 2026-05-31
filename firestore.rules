@@ -1,18 +1,119 @@
-rules_version='2'
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2026, 5, 20);
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isSuperAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminRole == 'super_admin';
+    }
+
+    function hasAllowedSelfCreateRole() {
+      return !('adminRole' in request.resource.data)
+        && request.resource.data.role in ['ARTIST', 'ORGANIZER', 'VISITOR'];
+    }
+
+    function keepsPrivilegedFieldsUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'adminRole']);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isSuperAdmin();
+      allow create: if isSuperAdmin() || (isOwner(userId) && hasAllowedSelfCreateRole());
+      allow update: if isSuperAdmin() || (isOwner(userId) && keepsPrivilegedFieldsUnchanged());
+      allow delete: if isSuperAdmin();
+    }
+
+    match /events/{id} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /spaces/{id} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /agents/{id} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /works/{id} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /interactions/{id} {
+      allow read: if signedIn() && resource.data.actorUserId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.actorUserId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.actorUserId == request.auth.uid;
+    }
+
+    match /follows/{id} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.followerUserId == request.auth.uid;
+      allow delete: if signedIn() && resource.data.followerUserId == request.auth.uid;
+    }
+
+    match /agendas/{id} {
+      allow read: if signedIn() && (resource.data.ownerUserId == request.auth.uid || resource.data.visibility == 'public');
+      allow write: if signedIn() && request.resource.data.ownerUserId == request.auth.uid;
+    }
+
+    match /agendaItems/{id} {
+      allow read: if signedIn() && resource.data.addedByUserId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.addedByUserId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.addedByUserId == request.auth.uid;
+    }
+
+    match /lists/{id} {
+      allow read: if signedIn() && (resource.data.ownerUserId == request.auth.uid || resource.data.isPublic == true);
+      allow write: if signedIn() && request.resource.data.ownerUserId == request.auth.uid;
+    }
+
+    match /listItems/{id} {
+      allow read: if signedIn() && (
+        get(/databases/$(database)/documents/lists/$(resource.data.listId)).data.ownerUserId == request.auth.uid
+        || get(/databases/$(database)/documents/lists/$(resource.data.listId)).data.isPublic == true
+      );
+      allow create, update, delete: if signedIn()
+        && get(/databases/$(database)/documents/lists/$(request.resource.data.listId)).data.ownerUserId == request.auth.uid;
+    }
+
+    match /boosts/{id} {
+      allow read: if signedIn() && resource.data.actorUserId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.actorUserId == request.auth.uid;
+    }
+
+    match /verifications/{id} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create, update: if signedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /mapPins/{id} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /challenges/{id} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /savedSearches/{id} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
   }
 }

@@ -18,6 +18,7 @@ function mapFirebaseAuthError(code: string): string {
     case 'auth/user-not-found':
     case 'auth/wrong-password':
     case 'auth/invalid-credential':
+    case 'auth/invalid-login-credentials':
       return 'Email ou senha incorretos.';
     case 'auth/email-already-in-use':
       return 'Este email já está cadastrado.';
@@ -39,9 +40,19 @@ function mapFirebaseAuthError(code: string): string {
       return 'Este email já está registado com outro método de login. Use o mesmo método ou associe contas na consola Firebase.';
     case 'auth/network-request-failed':
       return 'Erro de rede. Verifique sua conexão.';
+    case 'permission-denied':
+      return 'Login feito, mas não foi possível carregar seu perfil. Verifique as regras do Firestore para users/{uid}.';
     default:
       return 'Não foi possível autenticar. Tente novamente.';
   }
+}
+
+function getFirebaseErrorCode(err: unknown): string {
+  if (typeof err === 'object' && err !== null && 'code' in err) {
+    return String((err as { code?: unknown }).code ?? '');
+  }
+  const message = err instanceof Error ? err.message : String(err ?? '');
+  return message.match(/(?:auth\/[a-z-]+|permission-denied)/)?.[0] ?? '';
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
@@ -70,10 +81,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         await onRegister(email, password);
       }
     } catch (err: unknown) {
-      const code =
-        typeof err === 'object' && err !== null && 'code' in err
-          ? String((err as { code: string }).code)
-          : '';
+      const code = getFirebaseErrorCode(err);
       setError(code ? mapFirebaseAuthError(code) : mapFirebaseAuthError(''));
     } finally {
       setLoading(false);
@@ -86,10 +94,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     try {
       await onGoogleLogin();
     } catch (err: unknown) {
-      const code =
-        typeof err === 'object' && err !== null && 'code' in err
-          ? String((err as { code: string }).code)
-          : '';
+      const code = getFirebaseErrorCode(err);
       setError(code ? mapFirebaseAuthError(code) : mapFirebaseAuthError(''));
     } finally {
       setLoading(false);

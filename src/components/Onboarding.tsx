@@ -18,6 +18,7 @@ const disciplinesList = ["Visual Arts", "Techno", "Performance", "Photography", 
 
 export const Onboarding: React.FC<OnboardingProps> = ({ user, onComplete }) => {
   const [stepIndex, setStepIndex] = useState(0);
+  const [selectedRoleLabel, setSelectedRoleLabel] = useState('Artista');
   const [formData, setFormData] = useState<Partial<UserProfile>>({
     name: user.name || '',
     handle: user.handle || '',
@@ -76,23 +77,32 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onComplete }) => {
 
         <div className="min-h-[200px]">
             {currentStep.id === 'role' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {['ARTIST', 'ORGANIZER', 'VISITOR'].map((role) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {[
+                      { role: 'ARTIST' as const, label: 'Artista', sub: 'Divulgar trabalho e ser encontrado.' },
+                      { role: 'ORGANIZER' as const, label: 'Produtor / Organizador', sub: 'Eventos, produção e curadoria.' },
+                      { role: 'ORGANIZER' as const, label: 'Curador', sub: 'Montar mostras e programações.' },
+                      { role: 'ORGANIZER' as const, label: 'Coletivo / Banda / Projeto', sub: 'Perfil de grupo ou projeto cultural.' },
+                      { role: 'VISITOR' as const, label: 'Colecionador', sub: 'Descobrir e adquirir obras.' },
+                      { role: 'VISITOR' as const, label: 'Designer', sub: 'Referências visuais e colaborações.' },
+                      { role: 'ORGANIZER' as const, label: 'Gestor de espaço', sub: 'Programação e operação de locais.' },
+                      { role: 'VISITOR' as const, label: 'Público geral', sub: 'Explorar a cena cultural.' },
+                    ].map(({ role, label, sub }) => (
                         <button
-                            key={role}
-                            onClick={() => setFormData({ ...formData, role: role as any })}
-                            className={`p-6 rounded border-2 transition-all text-left group ${
-                                formData.role === role 
-                                ? 'border-brand-500 bg-brand-500/10' 
+                            key={label}
+                            onClick={() => {
+                              setSelectedRoleLabel(label);
+                              setFormData({ ...formData, role });
+                            }}
+                            className={`p-5 rounded border-2 transition-all text-left ${
+                                selectedRoleLabel === label
+                                ? 'border-brand-500 bg-brand-500/10'
                                 : 'border-zinc-800 bg-zinc-900 hover:border-zinc-600'
                             }`}
+                            type="button"
                         >
-                            <div className={`font-bold text-xl mb-2 ${formData.role === role ? 'text-brand-500' : 'text-white'}`}>
-                                {role === 'ARTIST' ? 'Artista' : role === 'ORGANIZER' ? 'Organizador' : 'Visitante'}
-                            </div>
-                            <p className="text-zinc-500 text-xs leading-relaxed">
-                                {role === 'ARTIST' ? 'Busco divulgar meu trabalho e encontrar espaços.' : role === 'ORGANIZER' ? 'Gerencio um espaço ou produzo eventos.' : 'Quero descobrir o underground.'}
-                            </p>
+                            <div className={`font-bold text-lg mb-1 ${formData.role === role ? 'text-brand-500' : 'text-white'}`}>{label}</div>
+                            <p className="text-zinc-500 text-xs leading-relaxed">{sub}</p>
                         </button>
                     ))}
                 </div>

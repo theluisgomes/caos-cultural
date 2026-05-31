@@ -5,9 +5,18 @@ import { ArrowLeft, Calendar, MapPin, Clock, Share2, Star, CreditCard, Info, Ext
 interface ListingDetailsProps {
   listing: Listing;
   onBack: () => void;
+  onNavigateAgent?: () => void;
+  onNavigateSpace?: () => void;
+  onNavigateEvents?: () => void;
 }
 
-export const ListingDetails: React.FC<ListingDetailsProps> = ({ listing, onBack }) => {
+export const ListingDetails: React.FC<ListingDetailsProps> = ({
+  listing,
+  onBack,
+  onNavigateAgent,
+  onNavigateSpace,
+  onNavigateEvents,
+}) => {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-20 animate-in slide-in-from-right duration-300">
       
@@ -125,6 +134,28 @@ export const ListingDetails: React.FC<ListingDetailsProps> = ({ listing, onBack 
                             #{tag}
                         </span>
                     ))}
+                </div>
+
+                {/* Graph navigation — pessoa ↔ evento ↔ espaço */}
+                <div className="border-t border-zinc-800 pt-8">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-zinc-600 mb-4">Explorar a rede</h3>
+                    <div className="flex flex-wrap gap-2">
+                        {onNavigateEvents && (
+                          <button type="button" onClick={onNavigateEvents} className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-full text-xs font-bold text-zinc-300 hover:border-brand-500">
+                            Mais eventos →
+                          </button>
+                        )}
+                        {onNavigateSpace && (
+                          <button type="button" onClick={onNavigateSpace} className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-full text-xs font-bold text-zinc-300 hover:border-brand-500">
+                            Ver espaço →
+                          </button>
+                        )}
+                        {onNavigateAgent && (
+                          <button type="button" onClick={onNavigateAgent} className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-full text-xs font-bold text-zinc-300 hover:border-brand-500">
+                            Conhecer agente →
+                          </button>
+                        )}
+                    </div>
                 </div>
 
             </div>

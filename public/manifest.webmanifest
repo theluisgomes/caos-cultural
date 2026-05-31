@@ -1,0 +1,17 @@
+{
+  "name": "CAOS Cultural",
+  "short_name": "CAOS",
+  "description": "Cultural and Artistic Organization System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#f43f5e",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
