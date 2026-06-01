@@ -197,10 +197,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
                     <Settings size={16} />
                     <span>Editar Perfil</span>
                 </button>
-                <button className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2 rounded-full font-bold shadow-[0_0_20px_rgba(225,29,72,0.4)] hover:shadow-[0_0_30px_rgba(225,29,72,0.6)] transition-all text-sm flex items-center gap-2">
+                <Link to="/create" className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2 rounded-full font-bold shadow-[0_0_20px_rgba(225,29,72,0.4)] hover:shadow-[0_0_30px_rgba(225,29,72,0.6)] transition-all text-sm flex items-center gap-2">
                     <Plus size={18} />
                     <span>Criar</span>
-                </button>
+                </Link>
               </div>
             </div>
 
