@@ -25,10 +25,15 @@ service cloud.firestore {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'adminRole']);
     }
 
+    function hasAllowedSelfUpdateRole() {
+      return request.resource.data.role in ['ARTIST', 'ORGANIZER', 'VISITOR']
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['adminRole']);
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId) || isSuperAdmin();
       allow create: if isSuperAdmin() || (isOwner(userId) && hasAllowedSelfCreateRole());
-      allow update: if isSuperAdmin() || (isOwner(userId) && keepsPrivilegedFieldsUnchanged());
+      allow update: if isSuperAdmin() || (isOwner(userId) && (keepsPrivilegedFieldsUnchanged() || hasAllowedSelfUpdateRole()));
       allow delete: if isSuperAdmin();
     }
 

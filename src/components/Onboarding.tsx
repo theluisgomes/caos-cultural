@@ -4,7 +4,7 @@ import { ArrowRight, Check, ChevronLeft } from 'lucide-react';
 
 interface OnboardingProps {
   user: UserProfile;
-  onComplete: (updatedUser: UserProfile) => void;
+  onComplete: (updatedUser: UserProfile) => void | Promise<void>;
 }
 
 const steps = [
@@ -19,10 +19,12 @@ const disciplinesList = ["Visual Arts", "Techno", "Performance", "Photography", 
 export const Onboarding: React.FC<OnboardingProps> = ({ user, onComplete }) => {
   const [stepIndex, setStepIndex] = useState(0);
   const [selectedRoleLabel, setSelectedRoleLabel] = useState('Artista');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<UserProfile>>({
     name: user.name || '',
     handle: user.handle || '',
-    role: 'VISITOR',
+    role: 'ARTIST',
     bio: '',
     disciplines: []
   });
@@ -30,9 +32,20 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onComplete }) => {
   const currentStep = steps[stepIndex];
   const isLastStep = stepIndex === steps.length - 1;
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (isSubmitting) return;
+    setSubmitError(null);
+
     if (isLastStep) {
-      onComplete({ ...user, ...formData } as UserProfile);
+      setIsSubmitting(true);
+      try {
+        await onComplete({ ...user, ...formData } as UserProfile);
+      } catch (err) {
+        console.error('Failed to complete onboarding:', err);
+        setSubmitError('Não foi possível finalizar agora. Tente novamente em alguns segundos.');
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
       setStepIndex(prev => prev + 1);
     }
@@ -182,14 +195,21 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onComplete }) => {
                 </button>
             ) : <div></div>}
 
-            <button 
+            <button
+                type="button"
                 onClick={handleNext}
-                className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-8 rounded-full shadow-[0_0_20px_rgba(225,29,72,0.4)] hover:shadow-[0_0_30px_rgba(225,29,72,0.6)] transition-all flex items-center gap-2"
+                disabled={isSubmitting}
+                className="bg-brand-600 hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400 text-white font-bold py-3 px-8 rounded-full shadow-[0_0_20px_rgba(225,29,72,0.4)] hover:shadow-[0_0_30px_rgba(225,29,72,0.6)] transition-all flex items-center gap-2"
             >
-                {isLastStep ? 'Finalizar' : 'Próximo'}
+                {isSubmitting ? 'Finalizando...' : isLastStep ? 'Finalizar' : 'Próximo'}
                 {isLastStep ? <Check size={20} /> : <ArrowRight size={20} />}
             </button>
         </div>
+        {submitError && (
+            <p className="mt-4 text-right text-sm font-medium text-red-400">
+                {submitError}
+            </p>
+        )}
       </div>
     </div>
   );
