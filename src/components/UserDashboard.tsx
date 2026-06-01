@@ -11,14 +11,12 @@ import {
   LogOut,
   Map as MapIcon,
   MapPin,
-  Palette,
   Plus,
   Settings,
   Share2,
-  Ticket,
-  Users,
 } from 'lucide-react';
 import { ListingCard } from './ListingCard';
+import { MapVisualizer } from './MapVisualizer';
 import { ReputationBadges } from './reputation/ReputationBadges';
 import { useLists } from '../hooks/useLists';
 import { useAgenda } from '../hooks/useAgenda';
@@ -30,7 +28,7 @@ interface UserDashboardProps {
   onLogout?: () => void | Promise<void>;
 }
 
-type ProfileTab = 'portfolio' | 'obras' | 'calendar' | 'agenda' | 'listas' | 'map' | 'saved';
+type ProfileTab = 'portfolio' | 'agenda' | 'lists' | 'map';
 
 const calendarDays = [
   { day: '18', week: 'SEG' },
@@ -83,8 +81,7 @@ const personalMapPins = [
     place: 'Galeria Vermelho',
     visits: 4,
     lastCheckIn: 'Hoje, 20:00',
-    x: 68,
-    y: 36,
+    coordinates: { lat: -23.5614, lng: -46.6819 },
   },
   {
     id: 'pin-2',
@@ -93,8 +90,7 @@ const personalMapPins = [
     place: 'Vila Madalena',
     visits: 9,
     lastCheckIn: 'Visitante frequente',
-    x: 38,
-    y: 58,
+    coordinates: { lat: -23.5538, lng: -46.6914 },
   },
   {
     id: 'pin-3',
@@ -103,8 +99,7 @@ const personalMapPins = [
     place: 'Brás',
     visits: 2,
     lastCheckIn: 'Sáb, 29 Nov',
-    x: 77,
-    y: 69,
+    coordinates: { lat: -23.5448, lng: -46.6168 },
   },
 ];
 
@@ -113,7 +108,23 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const { data: lists = [] } = useLists(user.id);
   const { data: agendaItems = [] } = useAgenda(user.id);
-  const myWorks = myListings.filter(l => l.type === ListingType.WORK);
+  const personalMapListings = useMemo<Listing[]>(() => {
+    if (myListings.length) return myListings;
+    return personalMapPins.map((pin, index) => ({
+      id: pin.id,
+      type: index === 1 ? ListingType.SPACE : ListingType.EVENT,
+      title: pin.title,
+      subtitle: pin.place,
+      description: `${pin.visits} visita(s) registradas. Último check-in: ${pin.lastCheckIn}.`,
+      imageUrl: `https://picsum.photos/seed/${pin.id}/600/400`,
+      price: 'Grátis',
+      rating: 4.8,
+      reviews: pin.visits,
+      date: pin.lastCheckIn,
+      coordinates: pin.coordinates,
+      tags: [pin.type, 'Mapa pessoal'],
+    }));
+  }, [myListings]);
   const profileSlug = user.handle.replace(/^@/, '') || user.id;
   const shareLinks = useMemo(() => {
     const baseUrl = typeof window === 'undefined' ? 'https://caos-cultural.web.app' : window.location.origin;
@@ -286,20 +297,6 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
                 Portfólio
             </button>
             <button 
-                onClick={() => setActiveTab('obras')}
-                className={tabClass('obras')}
-            >
-                <Palette size={16} />
-                Obras
-            </button>
-            <button 
-                onClick={() => setActiveTab('calendar')}
-                className={tabClass('calendar')}
-            >
-                <CalendarDays size={16} />
-                Calendário
-            </button>
-            <button 
                 onClick={() => setActiveTab('agenda')}
                 className={tabClass('agenda')}
             >
@@ -307,11 +304,11 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
                 Agenda
             </button>
             <button 
-                onClick={() => setActiveTab('listas')}
-                className={tabClass('listas')}
+                onClick={() => setActiveTab('lists')}
+                className={tabClass('lists')}
             >
                 <List size={16} />
-                Listas
+                Listas e salvos
             </button>
             <button
                 onClick={() => setActiveTab('map')}
@@ -320,66 +317,30 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
                 <MapIcon size={16} />
                 Mapa pessoal
             </button>
-            <button 
-                onClick={() => setActiveTab('saved')}
-                className={tabClass('saved')}
-            >
-                <Bookmark size={16} />
-                Salvos
-            </button>
         </div>
 
         {/* Content Area */}
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {activeTab === 'portfolio' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                    {myListings.map(listing => (
-                        <ListingCard key={listing.id} listing={listing} />
-                    ))}
-                    {/* Add new card placeholder */}
-                    <div className="aspect-[4/5] border border-zinc-800 border-dashed rounded-sm flex flex-col items-center justify-center text-zinc-600 hover:text-brand-500 hover:border-brand-500/50 hover:bg-brand-500/5 transition-all cursor-pointer group">
-                        <Plus size={48} className="mb-2 group-hover:scale-110 transition-transform" />
-                        <span className="font-bold uppercase tracking-widest text-xs">Novo Projeto</span>
+                <section className="space-y-5">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-500">Portfólio</p>
+                        <h3 className="mt-1 text-2xl font-black text-white">Projetos, obras e publicações</h3>
+                        <p className="mt-1 text-sm text-zinc-400">Tudo que você publica no CAOS fica reunido em um só lugar.</p>
                     </div>
-                </div>
-            )}
-
-            {activeTab === 'obras' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                    {myWorks.length ? myWorks.map(listing => (
-                        <ListingCard key={listing.id} listing={listing} />
-                    )) : (
-                        <p className="text-zinc-500 col-span-full">Nenhuma obra publicada ainda.</p>
-                    )}
-                </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                        {myListings.map(listing => (
+                            <ListingCard key={listing.id} listing={listing} />
+                        ))}
+                        <Link to="/create" className="aspect-[4/5] border border-zinc-800 border-dashed rounded-sm flex flex-col items-center justify-center text-zinc-600 hover:text-brand-500 hover:border-brand-500/50 hover:bg-brand-500/5 transition-all cursor-pointer group">
+                            <Plus size={48} className="mb-2 group-hover:scale-110 transition-transform" />
+                            <span className="font-bold uppercase tracking-widest text-xs">Novo Projeto</span>
+                        </Link>
+                    </div>
+                </section>
             )}
 
             {activeTab === 'agenda' && (
-                <div className="space-y-4">
-                    {agendaItems.length ? agendaItems.map(item => (
-                        <div key={item.id} className="bg-zinc-900 border-l-4 border-brand-500 p-4 rounded-sm">
-                            <h4 className="font-bold text-white">{item.customTitle || 'Evento salvo'}</h4>
-                            <p className="text-zinc-400 text-sm">{new Date(item.startsAt).toLocaleString('pt-BR')}</p>
-                        </div>
-                    )) : (
-                        <p className="text-zinc-500">Salve eventos para montar sua agenda.</p>
-                    )}
-                    <Link to="/agenda" className="text-brand-500 text-sm font-bold">Abrir agenda completa →</Link>
-                </div>
-            )}
-
-            {activeTab === 'listas' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {lists.map(list => (
-                        <div key={list.id} className="p-5 bg-zinc-900 border border-zinc-800 rounded-lg">
-                            <h4 className="font-bold text-white">{list.name}</h4>
-                            <p className="text-zinc-500 text-sm mt-1">{list.isPublic ? 'Pública' : 'Privada'} · {list.itemCount} itens</p>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {activeTab === 'calendar' && (
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
                         <div className="mb-5 flex items-center justify-between">
@@ -417,6 +378,22 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
                     </div>
 
                     <div className="space-y-3">
+                        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                          <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-500">Agenda</p>
+                          <h4 className="mt-1 text-xl font-black text-white">Eventos salvos</h4>
+                          <p className="mt-1 text-sm text-zinc-400">Calendário e agenda agora vivem na mesma aba.</p>
+                        </div>
+                        {agendaItems.length ? agendaItems.map(item => (
+                          <div key={item.id} className="rounded-2xl border-l-4 border-brand-500 bg-zinc-900 p-5">
+                            <h4 className="font-bold text-white">{item.customTitle || 'Evento salvo'}</h4>
+                            <p className="text-zinc-400 text-sm">{new Date(item.startsAt).toLocaleString('pt-BR')}</p>
+                            {item.customLocation && <p className="mt-1 text-xs text-zinc-500">{item.customLocation}</p>}
+                          </div>
+                        )) : (
+                          <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/50 p-5 text-sm text-zinc-500">
+                            Salve eventos para montar sua agenda.
+                          </div>
+                        )}
                         {calendarEvents.map(event => (
                           <div
                             key={event.id}
@@ -448,56 +425,62 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
                             </div>
                           </div>
                         ))}
+                        <Link to="/agenda" className="inline-flex text-brand-500 text-sm font-bold">Abrir agenda completa →</Link>
                     </div>
+                </div>
+            )}
+
+            {activeTab === 'lists' && (
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+                    <section className="space-y-4">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-500">Listas</p>
+                            <h3 className="mt-1 text-2xl font-black text-white">Curadorias e coleções</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {lists.length ? lists.map(list => (
+                                <div key={list.id} className="p-5 bg-zinc-900 border border-zinc-800 rounded-lg">
+                                    <h4 className="font-bold text-white">{list.name}</h4>
+                                    <p className="text-zinc-500 text-sm mt-1">{list.isPublic ? 'Pública' : 'Privada'} · {list.itemCount} itens</p>
+                                </div>
+                            )) : (
+                                <div className="md:col-span-2 rounded-lg border border-dashed border-zinc-800 p-8 text-zinc-500">
+                                    Crie listas para organizar artistas, espaços, eventos e obras.
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                    <aside className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+                        <Bookmark size={38} className="text-zinc-700 mb-4" />
+                        <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-500">Salvos</p>
+                        <h3 className="mt-1 text-xl font-black text-white">Sua coleção de inspirações</h3>
+                        <p className="mt-2 text-sm text-zinc-400">Itens salvos aparecem junto das listas para facilitar a organização.</p>
+                        <Link to="/explorar" className="mt-5 inline-flex text-brand-500 text-sm font-bold hover:text-brand-400">Explorar o CAOS →</Link>
+                    </aside>
                 </div>
             )}
 
             {activeTab === 'map' && (
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-                    <div className="relative min-h-[520px] overflow-hidden rounded-3xl border border-zinc-800 bg-[radial-gradient(circle_at_20%_20%,rgba(225,29,72,0.18),transparent_25%),linear-gradient(135deg,#09090b,#18181b_45%,#050505)]">
-                        <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:48px_48px]" />
-                        <div className="absolute left-6 top-6 z-10 max-w-sm">
-                            <p className="text-xs font-bold uppercase tracking-[0.3em] text-brand-500">Mapa pessoal</p>
-                            <h3 className="mt-2 text-3xl font-black text-white">Seus rastros culturais</h3>
-                            <p className="mt-2 text-sm text-zinc-400">
-                              Pins aparecem onde você fez check-in, visitou com frequência ou marcou evento/locação.
-                            </p>
-                        </div>
-                        <button
-                          onClick={() => shareProfileSection('Mapa', shareLinks.map)}
-                          className="absolute right-6 top-6 z-10 flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-black hover:bg-brand-500 hover:text-white"
-                        >
-                          <Share2 size={14} />
-                          Compartilhar mapa
-                        </button>
-                        {personalMapPins.map(pin => (
-                          <button
-                            key={pin.id}
-                            className="group absolute z-10 -translate-x-1/2 -translate-y-1/2"
-                            style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-                            title={`${pin.title} • ${pin.visits} visitas`}
-                          >
-                            <span className="absolute inset-0 animate-ping rounded-full bg-brand-500/40" />
-                            <span className="relative flex h-11 w-11 items-center justify-center rounded-full border border-brand-400 bg-brand-600 text-white shadow-[0_0_28px_rgba(225,29,72,0.65)]">
-                              <MapPin size={21} />
-                            </span>
-                            <span className="pointer-events-none absolute left-1/2 top-12 hidden w-48 -translate-x-1/2 rounded-xl border border-zinc-700 bg-black/90 p-3 text-left shadow-xl group-hover:block">
-                              <span className="block text-[10px] font-bold uppercase tracking-widest text-brand-500">{pin.type}</span>
-                              <span className="mt-1 block text-sm font-bold text-white">{pin.title}</span>
-                              <span className="mt-1 block text-xs text-zinc-400">{pin.place} • {pin.visits} visitas</span>
-                            </span>
-                          </button>
-                        ))}
+                    <div className="relative h-[560px] overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
+                        <MapVisualizer listings={personalMapListings} />
                     </div>
 
                     <div className="space-y-3">
                       <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-                        <div className="flex items-center gap-3">
-                          <Users className="text-brand-500" size={20} />
+                        <div className="mb-4 flex items-start justify-between gap-4">
                           <div>
-                            <h4 className="font-black text-white">Visitante frequente</h4>
-                            <p className="text-sm text-zinc-400">Locais com 3+ check-ins ganham destaque automático.</p>
+                            <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-500">Mapa pessoal</p>
+                            <h3 className="mt-1 text-2xl font-black text-white">Seus rastros culturais</h3>
+                            <p className="mt-2 text-sm text-zinc-400">Pins aparecem onde você publicou, salvou ou fez check-in.</p>
                           </div>
+                          <button
+                            onClick={() => shareProfileSection('Mapa', shareLinks.map)}
+                            className="rounded-full bg-white p-2 text-black hover:bg-brand-500 hover:text-white"
+                            title="Compartilhar mapa"
+                          >
+                            <Share2 size={15} />
+                          </button>
                         </div>
                       </div>
                       {personalMapPins.map(pin => (
@@ -512,22 +495,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
                           </div>
                           <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-4">
                             <span className="text-xs text-zinc-500">{pin.lastCheckIn}</span>
-                            <button className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-500 hover:text-brand-400">
-                              <Ticket size={13} />
-                              Check-in
-                            </button>
+                            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-500">
+                              <MapPin size={13} />
+                              Plotado
+                            </span>
                           </div>
                         </div>
                       ))}
                     </div>
-                </div>
-            )}
-
-            {activeTab === 'saved' && (
-                <div className="text-center py-20">
-                    <Bookmark size={48} className="mx-auto text-zinc-800 mb-4" />
-                    <h3 className="text-zinc-500 font-medium">Sua coleção de inspirações está vazia.</h3>
-                    <button className="mt-4 text-brand-500 text-sm hover:underline">Explorar o CAOS</button>
                 </div>
             )}
         </div>
