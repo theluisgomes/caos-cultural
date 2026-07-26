@@ -14,7 +14,7 @@ export const MacroJourneyBar: React.FC = () => {
   const { pathname } = useLocation();
 
   return (
-    <div className="w-full bg-zinc-950 sticky top-[68px] z-30 border-b border-zinc-800">
+    <div className="w-full bg-zinc-950 sticky top-36 md:top-[68px] z-30 border-b border-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar py-3">
           {journeys.map(j => {

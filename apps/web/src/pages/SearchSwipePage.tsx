@@ -122,6 +122,7 @@ export const SearchSwipePage: React.FC = () => {
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [passedIds, setPassedIds] = useState<string[]>([]);
   const [lastAction, setLastAction] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const filteredUsers = useMemo(() => {
     return swipeUsers.filter(user => {
@@ -164,30 +165,40 @@ export const SearchSwipePage: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 pb-24 pt-36 text-zinc-100 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-zinc-950 px-4 pb-24 pt-44 md:pt-36 text-zinc-100 sm:px-6 lg:px-8">
       <section className="mx-auto max-w-7xl">
-        <div className="mb-10 grid gap-6 lg:grid-cols-[1fr_380px] lg:items-end">
+        <div className="mb-8 grid gap-6 lg:grid-cols-[1fr_380px] lg:items-end">
           <div>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-500/40 bg-brand-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.3em] text-brand-400">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-brand-500/40 bg-brand-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.3em] text-brand-400">
               <Sparkles size={14} />
               Swipe search
             </div>
-            <h1 className="max-w-4xl text-5xl font-black uppercase leading-[0.9] tracking-tighter text-white md:text-7xl">
+            <h1 className="max-w-4xl text-3xl sm:text-5xl font-black uppercase leading-[0.9] tracking-tighter text-white md:text-7xl">
               Descubra pessoas por química cultural.
             </h1>
-            <p className="mt-5 max-w-2xl text-lg font-light leading-relaxed text-zinc-400">
-              Filtre características, veja um card por vez e avance como um feed de matches para artistas,
-              espaços, organizadores e visitantes.
+            <p className="mt-3 max-w-2xl text-sm sm:text-base font-light leading-relaxed text-zinc-400">
+              Filtre características, veja um card por vez e avance como um feed de matches.
             </p>
           </div>
 
           <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5">
-            <div className="mb-4 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(prev => !prev)}
+              className="lg:hidden w-full flex items-center justify-between mb-1"
+            >
+              <div className="flex items-center gap-3">
+                <SlidersHorizontal className="text-brand-500" size={20} />
+                <h2 className="text-lg font-black text-white">Filtros rápidos</h2>
+              </div>
+              <span className="text-zinc-500 text-xl leading-none">{filtersOpen ? '−' : '+'}</span>
+            </button>
+            <div className="hidden lg:flex items-center gap-3 mb-4">
               <SlidersHorizontal className="text-brand-500" size={20} />
               <h2 className="text-lg font-black text-white">Filtros rápidos</h2>
             </div>
 
-            <div className="space-y-4">
+            <div className={`space-y-4 ${filtersOpen ? 'mt-4' : 'hidden lg:block'}`}>
               <label className="block">
                 <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">Tipo de usuário</span>
                 <select
@@ -273,11 +284,20 @@ export const SearchSwipePage: React.FC = () => {
 
           <section className="order-1 flex flex-col items-center lg:order-2">
             {activeUser ? (
-              <div className="relative w-full max-w-xl">
-                <div className="absolute -left-5 top-10 h-[78%] w-full rotate-[-5deg] rounded-[2rem] border border-zinc-800 bg-zinc-900/70" />
-                <div className="absolute -right-5 top-10 h-[78%] w-full rotate-[5deg] rounded-[2rem] border border-zinc-800 bg-zinc-900/70" />
+              <div className="relative w-full max-w-xl px-1">
+                <div className="absolute left-0 top-10 h-[78%] w-full rotate-[-4deg] rounded-[2rem] border border-zinc-800 bg-zinc-900/70" />
+                <div className="absolute right-0 top-10 h-[78%] w-full rotate-[4deg] rounded-[2rem] border border-zinc-800 bg-zinc-900/70" />
 
-                <article className="relative overflow-hidden rounded-[2rem] border border-zinc-700 bg-zinc-900 shadow-2xl shadow-black/50">
+                <article
+                  className="relative overflow-hidden rounded-[2rem] border border-zinc-700 bg-zinc-900 shadow-2xl shadow-black/50"
+                  onTouchStart={e => { (e.currentTarget as HTMLElement).dataset.tx = String(e.touches[0].clientX); }}
+                  onTouchEnd={e => {
+                    const startX = Number((e.currentTarget as HTMLElement).dataset.tx);
+                    const dx = e.changedTouches[0].clientX - startX;
+                    if (dx < -60) moveNext('pass');
+                    else if (dx > 60) moveNext('like');
+                  }}
+                >
                   <div className="relative aspect-[4/5]">
                     <img src={activeUser.imageUrl} alt={activeUser.name} className="h-full w-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
@@ -294,7 +314,7 @@ export const SearchSwipePage: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <h2 className="text-4xl font-black tracking-tight text-white">{activeUser.name}</h2>
+                      <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white">{activeUser.name}</h2>
                       <p className="mt-1 text-zinc-300">{activeUser.handle}</p>
                       <div className="mt-3 flex items-center gap-2 text-sm text-zinc-300">
                         <MapPin size={16} />

@@ -63,6 +63,11 @@ export function getLacumbucaListings(): Listing[] {
       date: formatDate(event),
       coordinates: rioCoordinate(seed + index),
       tags: ['Música', 'Show', 'Rio de Janeiro', neighborhood, 'La Cumbuca'].filter(Boolean),
+      meta: {
+        city: event.city,
+        neighborhood,
+        startsAt: event.startsAt ?? undefined,
+      },
     };
   });
 }

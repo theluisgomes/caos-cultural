@@ -1,12 +1,96 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, MapPin, Search } from 'lucide-react';
 import { useListings } from '../../hooks/useListings';
 import { buildEventHighlights, formatHighlightDate } from '../../lib/eventHighlights';
-import { Listing } from '../../types';
+import { Listing, ListingType } from '../../types';
 
 const SPONSORED_CENTER = 2;
 const DESKTOP_MQ = '(min-width: 1024px)';
+const ALL_CITIES = 'all';
+
+const CAPITALS = [
+  'Rio Branco',
+  'Maceió',
+  'Macapá',
+  'Manaus',
+  'Salvador',
+  'Fortaleza',
+  'Brasília',
+  'Vitória',
+  'Goiânia',
+  'São Luís',
+  'Cuiabá',
+  'Campo Grande',
+  'Belo Horizonte',
+  'Belém',
+  'João Pessoa',
+  'Curitiba',
+  'Recife',
+  'Teresina',
+  'Rio de Janeiro',
+  'Natal',
+  'Porto Alegre',
+  'Porto Velho',
+  'Boa Vista',
+  'Florianópolis',
+  'São Paulo',
+  'Aracaju',
+  'Palmas',
+];
+
+const STATE_CAPITALS: Record<string, string> = {
+  AC: 'Rio Branco',
+  AL: 'Maceió',
+  AP: 'Macapá',
+  AM: 'Manaus',
+  BA: 'Salvador',
+  CE: 'Fortaleza',
+  DF: 'Brasília',
+  ES: 'Vitória',
+  GO: 'Goiânia',
+  MA: 'São Luís',
+  MT: 'Cuiabá',
+  MS: 'Campo Grande',
+  MG: 'Belo Horizonte',
+  PA: 'Belém',
+  PB: 'João Pessoa',
+  PR: 'Curitiba',
+  PE: 'Recife',
+  PI: 'Teresina',
+  RJ: 'Rio de Janeiro',
+  RN: 'Natal',
+  RS: 'Porto Alegre',
+  RO: 'Porto Velho',
+  RR: 'Boa Vista',
+  SC: 'Florianópolis',
+  SP: 'São Paulo',
+  SE: 'Aracaju',
+  TO: 'Palmas',
+};
+
+function normalizeCity(value: string | undefined): string | null {
+  if (!value) return null;
+  const city = value.trim();
+  if (!city) return null;
+  const stateCapital = STATE_CAPITALS[city.toUpperCase()];
+  if (stateCapital) return stateCapital;
+  return city;
+}
+
+function getListingCity(listing: Listing): string | null {
+  const explicitCity = normalizeCity(listing.meta?.city);
+  if (explicitCity) return explicitCity;
+
+  const searchable = [
+    listing.subtitle,
+    listing.description,
+    ...listing.tags,
+  ].join(' ');
+
+  const match = CAPITALS.find(capital => searchable.toLocaleLowerCase('pt-BR').includes(capital.toLocaleLowerCase('pt-BR')));
+  return match ?? null;
+}
 
 function useIsDesktop(): boolean {
   const [isDesktop, setIsDesktop] = useState(() =>
@@ -104,10 +188,31 @@ export const EventsHighlightCarousel: React.FC<EventsHighlightCarouselProps> = (
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
   const { data: listings = [], isLoading } = useListings('all', 'all');
-  const slides = useMemo(() => buildEventHighlights(listings), [listings]);
+  const eventListings = useMemo(() => listings.filter(listing => listing.type === ListingType.EVENT), [listings]);
+  const cityOptions = useMemo(() => {
+    const cities = new Set<string>();
+    eventListings.forEach(listing => {
+      const listingCity = getListingCity(listing);
+      if (listingCity) cities.add(listingCity);
+    });
+    return [...cities].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [eventListings]);
+  const [selectedCity, setSelectedCity] = useState<string>(ALL_CITIES);
+  const [isCityMenuOpen, setIsCityMenuOpen] = useState(false);
+  const filteredListings = useMemo(() => {
+    if (selectedCity === ALL_CITIES) return listings;
+    return listings.filter(listing => listing.type !== ListingType.EVENT || getListingCity(listing) === selectedCity);
+  }, [listings, selectedCity]);
+  const slides = useMemo(() => buildEventHighlights(filteredListings), [filteredListings]);
   const [activeIndex, setActiveIndex] = useState(SPONSORED_CENTER);
   const [query, setQuery] = useState('');
-  const city = 'São Paulo';
+  const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (selectedCity !== ALL_CITIES && !cityOptions.includes(selectedCity)) {
+      setSelectedCity(ALL_CITIES);
+    }
+  }, [cityOptions, selectedCity]);
 
   useEffect(() => {
     if (slides.length && activeIndex >= slides.length) {
@@ -142,6 +247,8 @@ export const EventsHighlightCarousel: React.FC<EventsHighlightCarouselProps> = (
     navigate(`/eventos${query ? `?q=${encodeURIComponent(query)}` : ''}`);
   };
 
+  const cityLabel = selectedCity === ALL_CITIES ? 'Todas as cidades' : selectedCity;
+
   if (isLoading) {
     return (
       <section className="bg-zinc-950 border-b border-zinc-800 py-12">
@@ -152,12 +259,12 @@ export const EventsHighlightCarousel: React.FC<EventsHighlightCarouselProps> = (
 
   if (!slides.length) return null;
 
-  const cardWidth = isDesktop ? { center: 720, side: 440 } : { center: 280, side: 260 };
-  const stepPx = isDesktop ? 380 : 220;
-  const maxOffset = isDesktop ? 1 : 2;
+  const cardWidth = isDesktop ? { center: 720, side: 440 } : { center: 280, side: 200 };
+  const stepPx = isDesktop ? 380 : 200;
+  const maxOffset = isDesktop ? 1 : 1;
 
   return (
-    <section className="bg-zinc-950 border-b border-zinc-800 pt-28 pb-14">
+    <section className="bg-zinc-950 border-b border-zinc-800 pt-44 md:pt-28 pb-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row gap-3 mb-10">
           <form
@@ -174,20 +281,69 @@ export const EventsHighlightCarousel: React.FC<EventsHighlightCarouselProps> = (
               aria-label="Buscar experiências"
             />
           </form>
-          <button
-            type="button"
-            className="flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-5 py-3.5 text-sm font-medium text-zinc-200 hover:border-zinc-600 min-w-[160px]"
-          >
-            <MapPin size={18} className="text-brand-500 shrink-0" />
-            <span>{city}</span>
-            <span className="text-zinc-600 text-xs">▾</span>
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsCityMenuOpen(open => !open)}
+              className="flex w-full items-center justify-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-5 py-3.5 text-sm font-medium text-zinc-200 hover:border-zinc-600 sm:min-w-[190px]"
+              aria-haspopup="listbox"
+              aria-expanded={isCityMenuOpen}
+            >
+              <MapPin size={18} className="text-brand-500 shrink-0" />
+              <span className="truncate">{cityLabel}</span>
+              <span className="text-zinc-600 text-xs">▾</span>
+            </button>
+            {isCityMenuOpen && (
+              <div className="absolute right-0 top-full z-30 mt-2 max-h-72 w-full min-w-[230px] overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl shadow-black/40">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCity(ALL_CITIES);
+                    setIsCityMenuOpen(false);
+                  }}
+                  className={`w-full rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                    selectedCity === ALL_CITIES ? 'bg-brand-600 text-white' : 'text-zinc-300 hover:bg-zinc-900'
+                  }`}
+                  role="option"
+                  aria-selected={selectedCity === ALL_CITIES}
+                >
+                  Todas as cidades
+                </button>
+                {cityOptions.map(option => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCity(option);
+                      setIsCityMenuOpen(false);
+                    }}
+                    className={`w-full rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                      selectedCity === option ? 'bg-brand-600 text-white' : 'text-zinc-300 hover:bg-zinc-900'
+                    }`}
+                    role="option"
+                    aria-selected={selectedCity === option}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <p className="text-xs font-bold uppercase tracking-[0.25em] text-brand-500 mb-2">Em destaque</p>
         <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-8">Próximos eventos</h2>
 
-        <div className={`relative ${isDesktop ? '' : '[perspective:1400px]'}`}>
+        <div
+          className={`relative overflow-hidden ${isDesktop ? '' : '[perspective:1400px]'}`}
+          onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+          onTouchEnd={e => {
+            if (touchStartX.current === null) return;
+            const dx = e.changedTouches[0].clientX - touchStartX.current;
+            if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+            touchStartX.current = null;
+          }}
+        >
           <div
             className={`relative flex items-center justify-center ${
               isDesktop ? 'min-h-[280px]' : 'min-h-[340px] md:min-h-[400px]'
