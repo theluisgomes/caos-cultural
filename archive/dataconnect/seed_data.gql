@@ -1,0 +1,124 @@
+mutation CreateDemoData @transaction @auth(level: USER, insecureReason: "Seed data mutations are for development and testing and do not require specific user authorization logic.") {
+  user_upsertMany(data: [
+    {
+      id: "b4e4d5c6-a7b8-9c0d-e1f2-3a4b5c6d7e8f",
+      firebaseAuthUid: "testuser1_firebaseuid",
+      displayName: "Alice Smith",
+      email: "alice.smith@example.com",
+      createdAt: "2023-01-15T10:00:00Z",
+      bio: "An art enthusiast and curator.",
+      location: "Santiago, Chile",
+      interests: ["Art", "History", "Photography"]
+    },
+    {
+      id: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      firebaseAuthUid: "testuser2_firebaseuid",
+      displayName: "Bob Johnson",
+      email: "bob.johnson@example.com",
+      createdAt: "2023-02-20T11:30:00Z",
+      bio: "Passionate about music and local events.",
+      location: "Valparaíso, Chile",
+      interests: ["Music", "Concerts", "Festivals", "Dance"]
+    }
+  ])
+  culturalListing_upsertMany(data: [
+    {
+      id: "c7d8e9f0-a1b2-3c4d-5e6f-7a8b9c0d1e2f",
+      title: "Art Exhibition: Chilean Landscapes",
+      description: "A captivating exhibition showcasing contemporary Chilean landscape art.",
+      type: "Exhibition",
+      locationName: "National Museum of Fine Arts",
+      latitude: -33.4357,
+      longitude: -70.6483,
+      createdAt: "2023-03-01T09:00:00Z",
+      creatorId: "b4e4d5c6-a7b8-9c0d-e1f2-3a4b5c6d7e8f",
+      imageUrl: "https://example.com/art_exhibition.jpg",
+      website: "https://mnba.gob.cl/",
+      contactEmail: "info@mnba.gob.cl",
+      startDate: "2023-03-10",
+      endDate: "2023-04-30",
+      startTime: "10:00",
+      endTime: "18:00",
+      priceRange: "CLP 5.000",
+      categories: ["Art", "Exhibition", "Painting"]
+    },
+    {
+      id: "d1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a",
+      title: "Valparaíso Street Art Tour",
+      description: "Explore the vibrant street art and colorful murals of Valparaíso.",
+      type: "Tour",
+      locationName: "Cerro Alegre, Valparaíso",
+      latitude: -33.0458,
+      longitude: -71.6127,
+      createdAt: "2023-03-05T14:00:00Z",
+      creatorId: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      imageUrl: "https://example.com/valparaiso_street_art.jpg",
+      website: "https://valparaisotours.com/",
+      contactEmail: "hello@valparaisotours.com",
+      startDate: "2023-03-20",
+      endDate: "2023-12-31",
+      startTime: "11:00",
+      endTime: "14:00",
+      priceRange: "CLP 15.000",
+      categories: ["Art", "Tour", "Street Art", "Photography"]
+    },
+    {
+      id: "e0f1a2b3-c4d5-6e7f-8a9b-0c1d2e3f4a5b",
+      title: "Classical Guitar Concert",
+      description: "An evening of enchanting classical guitar music by local artists.",
+      type: "Concert",
+      locationName: "Teatro Municipal de Santiago",
+      latitude: -33.4373,
+      longitude: -70.6480,
+      createdAt: "2023-03-10T16:00:00Z",
+      creatorId: "b4e4d5c6-a7b8-9c0d-e1f2-3a4b5c6d7e8f",
+      imageUrl: "https://example.com/guitar_concert.jpg",
+      website: "https://www.municipal.cl/",
+      contactEmail: "contacto@municipal.cl",
+      startDate: "2023-04-05",
+      endDate: "2023-04-05",
+      startTime: "19:30",
+      endTime: "21:30",
+      priceRange: "CLP 10.000 - 30.000",
+      categories: ["Music", "Concert", "Classical"]
+    }
+  ])
+  favorite_upsertMany(data: [
+    {
+      userId: "b4e4d5c6-a7b8-9c0d-e1f2-3a4b5c6d7e8f",
+      listingId: "d1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a",
+      createdAt: "2023-03-08T10:00:00Z"
+    },
+    {
+      userId: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      listingId: "c7d8e9f0-a1b2-3c4d-5e6f-7a8b9c0d1e2f",
+      createdAt: "2023-03-06T15:00:00Z"
+    }
+  ])
+  review_upsertMany(data: [
+    {
+      id: "f2g3h4i5-j6k7-l8m9-n0p1-q2r3s4t5u6v7",
+      userId: "b4e4d5c6-a7b8-9c0d-e1f2-3a4b5c6d7e8f",
+      listingId: "c7d8e9f0-a1b2-3c4d-5e6f-7a8b9c0d1e2f",
+      rating: 5,
+      createdAt: "2023-03-12T11:00:00Z",
+      comment: "Absolutely stunning artwork! A must-see for art lovers."
+    },
+    {
+      id: "g8h9i0j1-k2l3-m4n5-o6p7-q8r9s0t1u2v3",
+      userId: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      listingId: "d1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a",
+      rating: 4,
+      createdAt: "2023-03-15T13:00:00Z",
+      comment: "A fantastic way to see Valparaíso! The guide was very knowledgeable."
+    }
+  ])
+  category_upsertMany(data: [
+    {name: "Art", description: "All forms of visual and performing arts."},
+    {name: "Music", description: "Concerts, festivals, and musical performances."},
+    {name: "History", description: "Historical tours, museums, and educational events."},
+    {name: "Food & Drink", description: "Culinary experiences, tastings, and food festivals."},
+    {name: "Dance", description: "Dance performances, workshops, and classes."},
+    {name: "Photography", description: "Photography exhibitions, workshops, and tours."}
+  ])
+}

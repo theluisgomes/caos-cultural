@@ -3,9 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { Calendar, Compass, Landmark, Palette, Users } from 'lucide-react';
 
 const journeys = [
-  { id: '/explorar', label: 'Explorar', icon: Compass },
+  { id: '/explorar', label: 'Descobrir', icon: Compass },
   { id: '/eventos', label: 'Eventos', icon: Calendar },
-  { id: '/agentes', label: 'Agentes', icon: Users },
+  { id: '/agentes', label: 'Usuários', icon: Users },
   { id: '/espacos', label: 'Espaços', icon: Landmark },
   { id: '/obras', label: 'Obras', icon: Palette },
 ];
@@ -19,11 +19,12 @@ export const MacroJourneyBar: React.FC = () => {
         <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar py-3">
           {journeys.map(j => {
             const Icon = j.icon;
-            const active = pathname === j.id || (j.id === '/explorar' && pathname === '/');
+            const active =
+              pathname === j.id || (j.id === '/explorar' && (pathname === '/' || pathname === '/descobrir'));
             return (
               <Link
                 key={j.id}
-                to={j.id === '/explorar' ? '/' : j.id}
+                to={j.id}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
                   active
                     ? 'bg-brand-600 text-white shadow-[0_0_20px_rgba(225,29,72,0.35)]'

@@ -1,0 +1,72 @@
+query AllCulturalListings @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public as it retrieves public cultural listings.") {
+  culturalListings {
+    id
+    title
+    description
+    type
+    locationName
+    latitude
+    longitude
+    startDate
+    endDate
+    startTime
+    endTime
+    priceRange
+    categories
+    imageUrl
+    website
+    contactEmail
+    creator {
+      id
+      displayName
+      email
+    }
+  }
+}
+
+query MyFavoriteCulturalListings @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users as it retrieves only their favorite listings.") {
+  favorites(where: { userId: { eq_expr: "auth.uid" } }) {
+    listing {
+      id
+      title
+      locationName
+      type
+      startDate
+    }
+    createdAt
+  }
+}
+
+mutation CreateCulturalListing($title: String!, $description: String!, $type: String!, $locationName: String!, $latitude: Float!, $longitude: Float!, $startDate: Date, $endDate: Date, $startTime: String, $endTime: String, $priceRange: String, $categories: [String!], $imageUrl: String, $website: String, $contactEmail: String) @auth(level: USER) {
+  culturalListing_insert(
+    data: {
+      title: $title
+      description: $description
+      type: $type
+      locationName: $locationName
+      latitude: $latitude
+      longitude: $longitude
+      startDate: $startDate
+      endDate: $endDate
+      startTime: $startTime
+      endTime: $endTime
+      priceRange: $priceRange
+      categories: $categories
+      imageUrl: $imageUrl
+      website: $website
+      contactEmail: $contactEmail
+      creatorId_expr: "auth.uid"
+      createdAt_expr: "request.time"
+    }
+  )
+}
+
+mutation AddCulturalListingToFavorites($listingId: UUID!) @auth(level: USER) {
+  favorite_insert(
+    data: {
+      userId_expr: "auth.uid"
+      listingId: $listingId
+      createdAt_expr: "request.time"
+    }
+  )
+}

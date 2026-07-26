@@ -146,9 +146,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return saved;
       }
       const db = getFirestoreInstance();
-      await saveUserProfile(db, updated);
-      setUser(updated);
-      return updated;
+      const saved = await saveUserProfile(db, updated);
+      setUser(saved);
+      return saved;
     },
     [useFirebase]
   );

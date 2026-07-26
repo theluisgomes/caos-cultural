@@ -9,9 +9,8 @@
  *
  * (The constant and the type share a name; TS disambiguates by position.)
  *
- * These schemas are the source of truth for Firestore shapes (Phase 0.3+).
- * The legacy `src/types.ts` is deprecated and will be removed once all
- * components are migrated in Phases 1 and 2.
+ * These schemas are the source of truth for Firestore shapes.
+ * The legacy `src/types.ts` holds UI DTOs (`Listing`, `UserProfile`) only.
  */
 
 export * from './common';
@@ -26,3 +25,5 @@ export * from './interaction';
 export * from './verification';
 export * from './boost';
 export * from './feed';
+export * from './culturalProfile';
+export * from './mapPin';

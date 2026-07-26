@@ -1,14 +1,15 @@
 import type { User as FirebaseUser } from 'firebase/auth';
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  type Firestore,
-} from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore';
+import type { AgentKind } from '../domain/agent';
+import type { User as DomainUser } from '../domain/user';
 import type { UserProfile } from '../types';
-
-const USERS = 'users';
+import { getAgent, getAgentByOwner, slugify, upsertAgent } from './repos/agentsRepo';
+import { getUserLenient, upsertUser } from './repos/usersRepo';
+import {
+  agentKindFromUiRole,
+  domainUserToProfile,
+  profileToDomainPatch,
+} from './userMappers';
 
 function handleFromEmail(email: string): string {
   const local = email.split('@')[0] || 'user';
@@ -16,113 +17,175 @@ function handleFromEmail(email: string): string {
   return `@${safe}`;
 }
 
-function joinDateLabel(): string {
-  return new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-}
-
 /**
- * Creates `users/{uid}` on first sign-in, or lightly syncs provider fields.
- * In Phase 0.4 this merge logic can move to a Cloud Function `onCreate` trigger.
+ * Ensures `users/{uid}` exists (canonical User shape).
+ * Cloud Function `upsertUserOnLogin` also creates the doc; this is a client fallback
+ * and light provider-field sync.
  */
 export async function ensureUserDocument(
   db: Firestore,
   fbUser: FirebaseUser
 ): Promise<void> {
-  const ref = doc(db, USERS, fbUser.uid);
-  const snap = await getDoc(ref);
+  const existing = await getUserLenient(db, fbUser.uid);
   const email = fbUser.email ?? '';
   const baseName =
     fbUser.displayName?.trim() ||
     (email ? email.split('@')[0] : 'Usuário');
   const now = new Date().toISOString();
 
-  if (!snap.exists()) {
-    const profile: Record<string, unknown> = {
+  if (!existing) {
+    const user: DomainUser = {
       id: fbUser.uid,
-      email,
-      name: baseName,
+      email: email || null,
+      phone: null,
+      displayName: baseName,
       handle: email ? handleFromEmail(email) : `@user_${fbUser.uid.slice(0, 8)}`,
-      role: 'VISITOR',
-      bio: '',
-      location: '',
       avatarUrl:
         fbUser.photoURL ||
         `https://picsum.photos/seed/${encodeURIComponent(fbUser.uid)}/200/200`,
       coverUrl: 'https://picsum.photos/seed/cover_new/1200/400',
-      disciplines: [],
-      stats: {
-        followers: 0,
-        following: 0,
-        eventsAttended: 0,
-        projectsCreated: 0,
+      bio: '',
+      locationLabel: null,
+      primaryCity: null,
+      primaryState: null,
+      primaryCountry: 'BR',
+      trustTier: email ? 'email' : 'unverified',
+      role: 'member',
+      agentId: null,
+      preferences: {
+        language: 'pt-BR',
+        pushEnabled: true,
+        emailEnabled: true,
       },
-      joinDate: joinDateLabel(),
       createdAt: now,
       updatedAt: now,
+      lastSeenAt: now,
     };
-    await setDoc(ref, profile);
+    await upsertUser(db, user);
     return;
   }
 
-  const patch: Record<string, unknown> = {
-    email,
+  const patch: DomainUser = {
+    ...existing,
+    email: email || existing.email,
     updatedAt: now,
+    lastSeenAt: now,
   };
-  if (fbUser.photoURL && typeof snap.data()?.avatarUrl === 'string') {
-    const current = snap.data()?.avatarUrl as string;
+  if (fbUser.photoURL) {
+    const current = existing.avatarUrl;
     if (!current || current.includes('picsum.photos')) {
       patch.avatarUrl = fbUser.photoURL;
     }
   }
-  await updateDoc(ref, patch);
-}
-
-function coerceUserProfile(data: Record<string, unknown>, uid: string): UserProfile {
-  const stats = data.stats as UserProfile['stats'] | undefined;
-  return {
-    id: (data.id as string) || uid,
-    name: (data.name as string) || 'Usuário',
-    email: data.email as string | undefined,
-    handle: (data.handle as string) || '@user',
-    role: (data.role as UserProfile['role']) || 'VISITOR',
-    bio: (data.bio as string) ?? '',
-    location: (data.location as string) ?? '',
-    avatarUrl: (data.avatarUrl as string) || `https://picsum.photos/seed/${uid}/200/200`,
-    coverUrl: (data.coverUrl as string) || 'https://picsum.photos/seed/cover_new/1200/400',
-    disciplines: Array.isArray(data.disciplines) ? (data.disciplines as string[]) : [],
-    stats: stats ?? {
-      followers: 0,
-      following: 0,
-      eventsAttended: 0,
-      projectsCreated: 0,
-    },
-    socialLinks: data.socialLinks as UserProfile['socialLinks'],
-    joinDate: (data.joinDate as string) || joinDateLabel(),
-  };
+  await upsertUser(db, patch);
 }
 
 export async function loadUserProfile(
   db: Firestore,
   uid: string
 ): Promise<UserProfile | null> {
-  const snap = await getDoc(doc(db, USERS, uid));
-  if (!snap.exists()) return null;
-  return coerceUserProfile(snap.data() as Record<string, unknown>, uid);
+  const user = await getUserLenient(db, uid);
+  if (!user) return null;
+
+  let agentKind: AgentKind | null = null;
+  let disciplines: string[] = [];
+  if (user.agentId) {
+    const agent = await getAgent(db, user.agentId);
+    if (agent) {
+      agentKind = agent.kind;
+      disciplines = agent.disciplines;
+    }
+  } else {
+    const agent = await getAgentByOwner(db, uid);
+    if (agent) {
+      agentKind = agent.kind;
+      disciplines = agent.disciplines;
+    }
+  }
+
+  return domainUserToProfile(user, { agentKind, disciplines });
 }
 
 export async function saveUserProfile(
   db: Firestore,
   profile: UserProfile
-): Promise<void> {
-  const ref = doc(db, USERS, profile.id);
-  const { id, ...rest } = profile;
-  void id;
-  await setDoc(
-    ref,
-    {
-      ...rest,
-      updatedAt: new Date().toISOString(),
-    },
-    { merge: true }
-  );
+): Promise<UserProfile> {
+  const existing = await getUserLenient(db, profile.id);
+  const domain = profileToDomainPatch(profile, existing);
+
+  const kind =
+    (profile.agentKind as AgentKind | null | undefined) ||
+    agentKindFromUiRole(profile.role);
+
+  const now = new Date().toISOString();
+  let agentId = domain.agentId;
+
+  if (!agentId) {
+    agentId = `agent_${profile.id}`;
+    await upsertAgent(db, {
+      id: agentId,
+      ownerUserId: profile.id,
+      kind,
+      displayName: profile.name || 'Usuário',
+      slug: slugify(profile.handle.replace(/^@/, '') || profile.name || profile.id),
+      tagline: '',
+      bio: profile.bio || '',
+      manifesto: '',
+      disciplines: profile.disciplines || [],
+      techniques: [],
+      professions: [],
+      languages: ['pt-BR'],
+      city: null,
+      state: null,
+      country: 'BR',
+      neighborhood: null,
+      identity: {},
+      socialLinks: {
+        instagram: profile.socialLinks?.instagram ?? undefined,
+        portfolio: profile.socialLinks?.portfolio ?? undefined,
+      },
+      avatarUrl: profile.avatarUrl || null,
+      coverUrl: profile.coverUrl || null,
+      portfolioImages: [],
+      isPublic: true,
+      isVerified: false,
+      acceptsCommissions: false,
+      acceptsBookings: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else {
+    const agent = await getAgent(db, agentId);
+    if (agent) {
+      await upsertAgent(db, {
+        ...agent,
+        kind,
+        displayName: profile.name || agent.displayName,
+        bio: profile.bio || agent.bio,
+        disciplines: profile.disciplines?.length ? profile.disciplines : agent.disciplines,
+        avatarUrl: profile.avatarUrl || agent.avatarUrl,
+        coverUrl: profile.coverUrl || agent.coverUrl,
+        updatedAt: now,
+      });
+    }
+  }
+
+  domain.agentId = agentId;
+  // Never allow client to self-elevate platform role
+  if (existing?.role === 'super_admin') {
+    domain.role = 'super_admin';
+  } else if (domain.role !== 'member' && domain.role !== existing?.role) {
+    domain.role = existing?.role ?? 'member';
+  } else if (!existing) {
+    domain.role = 'member';
+  }
+
+  await upsertUser(db, domain);
+  return domainUserToProfile(domain, {
+    agentKind: kind,
+    disciplines: profile.disciplines,
+    stats: profile.stats,
+    socialLinks: profile.socialLinks,
+    joinDate: profile.joinDate,
+  });
 }

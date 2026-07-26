@@ -30,11 +30,11 @@ const FAQ_DATA: FAQSection[] = [
     ],
   },
   {
-    title: 'Para Artistas',
+    title: 'Para Usuários',
     items: [
       {
-        q: 'Como crio meu perfil de artista?',
-        a: 'Faça seu cadastro, escolha o papel "Artista" no onboarding, preencha sua bio e disciplinas. Seu perfil estará visível na seção de Artistas imediatamente.',
+        q: 'Como crio meu perfil?',
+        a: 'Faça seu cadastro, escolha o papel "Artista" no onboarding, preencha sua bio e disciplinas. Seu perfil estará visível na seção de Usuários imediatamente.',
       },
       {
         q: 'Posso divulgar meu trabalho gratuitamente?',

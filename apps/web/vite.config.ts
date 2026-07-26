@@ -4,8 +4,11 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
+    // Monorepo: `.env.local` lives at the repo root, not apps/web.
+    const envDir = path.resolve(__dirname, '../..');
+    const env = loadEnv(mode, envDir, '');
     return {
+      envDir,
       server: {
         port: 5174,
         host: '0.0.0.0',

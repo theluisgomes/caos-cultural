@@ -19,6 +19,22 @@ View your app in AI Studio: https://ai.studio/apps/drive/1kS8B6_A6odu76UbWoj5ZT-
 3. Run the app:
    `npm run dev`
 
+## Banco de dados
+
+Firestore é a fonte de verdade (ver `CONTEXT.md`, `docs/data/collections.md`, ADR `docs/adr/0001-firestore-only-mvp.md`). Data Connect/Postgres está em `archive/`.
+
+### Emuladores locais
+
+```bash
+# Terminal 1
+npx firebase emulators:start
+
+# Terminal 2 — apps/web
+VITE_USE_FIREBASE_EMULATORS=true npm run dev
+```
+
+Portas: Auth `9099`, Firestore `8080`, Storage `9199`, Functions `5001`, UI `4000`.
+
 ## Deploy (Vercel + domínio)
 
 1. Configure as variáveis de ambiente na Vercel (Project Settings -> Environment Variables):

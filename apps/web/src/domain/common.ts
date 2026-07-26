@@ -3,9 +3,8 @@ import { z } from 'zod';
 /**
  * Shared primitives used across domain aggregates.
  *
- * Timestamps are stored as ISO 8601 strings in application code.
- * A small adapter in `src/lib/firestore.ts` (Phase 0.3) will convert to/from
- * Firestore `Timestamp` objects at the persistence boundary.
+ * Timestamps are ISO 8601 strings in application code.
+ * `src/lib/firestore.ts` converts to/from Firestore `Timestamp` at the boundary.
  */
 
 export const IsoDate = z.iso.datetime({ offset: true });

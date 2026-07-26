@@ -46,10 +46,14 @@ export const Event = z.object({
   endsAt: IsoDate.nullable(),
   timezone: z.string().default('America/Sao_Paulo'),
   spaceId: Id.nullable(),
+  /** Optional link to a permanent CulturalProfile (series / festival brand). */
+  profileId: Id.nullable().default(null),
   locationLabel: z.string().nullable(),
   geo: GeoPoint.nullable(),
   organizerAgentIds: z.array(Id).default([]),
   featuredAgentIds: z.array(Id).default([]),
+  /** User who created this occurrence (ownership for client writes). */
+  createdByUserId: Id.nullable().default(null),
   categories: z.array(z.string()).default([]),
   tags: z.array(z.string()).default([]),
   ticketing: Ticketing,

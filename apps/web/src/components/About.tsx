@@ -19,7 +19,7 @@ const TEAM = [
 ];
 
 const NUMBERS = [
-  { label: 'Artistas', value: '2.4K+' },
+  { label: 'Usuários', value: '2.4K+' },
   { label: 'Eventos Mapeados', value: '8.1K' },
   { label: 'Cidades', value: '14' },
   { label: 'Comunidade', value: '32K' },

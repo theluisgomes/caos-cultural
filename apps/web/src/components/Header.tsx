@@ -160,7 +160,7 @@ export const Header: React.FC = () => {
           <Search size={20} className="text-zinc-400" />
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-zinc-200">Para onde vamos?</span>
-            <span className="text-xs text-zinc-500">Eventos • Espaços • Artistas</span>
+            <span className="text-xs text-zinc-500">Eventos • Espaços • Usuários</span>
           </div>
         </button>
       </div>

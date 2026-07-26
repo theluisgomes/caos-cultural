@@ -20,7 +20,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ user, onSave, onCancel
   const handleImageUpload = async (file: File, kind: 'avatar' | 'cover') => {
     setUploadError(null);
     try {
-      const url = await uploadImage('users', user.id, file, kind);
+      const { url } = await uploadImage('users', user.id, file, kind);
       setData(prev => (kind === 'avatar' ? { ...prev, avatarUrl: url } : { ...prev, coverUrl: url }));
     } catch {
       setUploadError('Falha ao enviar imagem. Verifique login e regras do Storage.');

@@ -4,16 +4,26 @@ type Locale = 'pt-BR' | 'en-US';
 
 const messages: Record<Locale, Record<string, string>> = {
   'pt-BR': {
-    explore: 'Explorar',
+    explore: 'Descobrir',
     events: 'Eventos',
-    agents: 'Agentes',
+    agents: 'Usuários',
     spaces: 'Espaços',
+    caos: 'CAOS',
+    feed: 'Feed',
+    search: 'Buscar',
+    agenda: 'Agenda',
+    profile: 'Perfil',
   },
   'en-US': {
-    explore: 'Explore',
+    explore: 'Discover',
     events: 'Events',
-    agents: 'Agents',
+    agents: 'Users',
     spaces: 'Spaces',
+    caos: 'CAOS',
+    feed: 'Feed',
+    search: 'Search',
+    agenda: 'Agenda',
+    profile: 'Profile',
   },
 };
 

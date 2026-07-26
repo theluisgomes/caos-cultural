@@ -10,51 +10,88 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function isSuperAdmin() {
       return signedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminRole == 'super_admin';
+        && userDoc().role == 'super_admin';
     }
 
-    function hasAllowedSelfCreateRole() {
-      return !('adminRole' in request.resource.data)
-        && request.resource.data.role in ['ARTIST', 'ORGANIZER', 'VISITOR'];
+    function isMemberRole(role) {
+      return role in ['member', 'moderator', 'admin', 'super_admin'];
     }
 
-    function keepsPrivilegedFieldsUnchanged() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'adminRole']);
+    function keepsPlatformRoleUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']);
     }
 
-    function hasAllowedSelfUpdateRole() {
-      return request.resource.data.role in ['ARTIST', 'ORGANIZER', 'VISITOR']
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['adminRole']);
+    function selfCreateUserOk() {
+      return request.resource.data.role == 'member'
+        && isMemberRole(request.resource.data.role);
     }
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isSuperAdmin();
-      allow create: if isSuperAdmin() || (isOwner(userId) && hasAllowedSelfCreateRole());
-      allow update: if isSuperAdmin() || (isOwner(userId) && (keepsPrivilegedFieldsUnchanged() || hasAllowedSelfUpdateRole()));
+      allow read: if true;
+      allow create: if isSuperAdmin()
+        || (isOwner(userId) && selfCreateUserOk());
+      allow update: if isSuperAdmin()
+        || (isOwner(userId) && keepsPlatformRoleUnchanged()
+            && request.resource.data.role in ['member', 'moderator', 'admin', 'super_admin']);
       allow delete: if isSuperAdmin();
     }
 
-    match /events/{id} {
-      allow read: if true;
-      allow write: if isSuperAdmin();
-    }
-
-    match /spaces/{id} {
-      allow read: if true;
-      allow write: if isSuperAdmin();
+    function agentOwnedByCaller(agentId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/agents/$(agentId))
+        && get(/databases/$(database)/documents/agents/$(agentId)).data.ownerUserId == request.auth.uid;
     }
 
     match /agents/{id} {
-      allow read: if true;
-      allow write: if isSuperAdmin();
+      allow read: if resource.data.isPublic == true || isSuperAdmin()
+        || (signedIn() && resource.data.ownerUserId == request.auth.uid);
+      allow create: if signedIn()
+        && (isSuperAdmin() || request.resource.data.ownerUserId == request.auth.uid);
+      allow update, delete: if isSuperAdmin()
+        || (signedIn() && resource.data.ownerUserId == request.auth.uid);
+    }
+
+    match /spaces/{id} {
+      allow read: if resource.data.isPublished == true || isSuperAdmin()
+        || (signedIn() && request.auth.uid in resource.data.managerUserIds);
+      allow create: if signedIn()
+        && (isSuperAdmin() || request.auth.uid in request.resource.data.managerUserIds);
+      allow update, delete: if isSuperAdmin()
+        || (signedIn() && request.auth.uid in resource.data.managerUserIds);
+    }
+
+    match /events/{id} {
+      allow read: if resource.data.isPublished == true || isSuperAdmin()
+        || (signedIn() && resource.data.createdByUserId == request.auth.uid);
+      allow create: if signedIn()
+        && (isSuperAdmin() || request.resource.data.createdByUserId == request.auth.uid);
+      allow update, delete: if isSuperAdmin()
+        || (signedIn() && resource.data.createdByUserId == request.auth.uid);
+    }
+
+    match /culturalProfiles/{id} {
+      allow read: if resource.data.isPublished == true || isSuperAdmin()
+        || (signedIn() && request.auth.uid in resource.data.managerUserIds);
+      allow create: if signedIn()
+        && (isSuperAdmin() || request.auth.uid in request.resource.data.managerUserIds);
+      allow update, delete: if isSuperAdmin()
+        || (signedIn() && request.auth.uid in resource.data.managerUserIds);
     }
 
     match /works/{id} {
-      allow read: if true;
-      allow write: if isSuperAdmin();
+      allow read: if resource.data.isPublished == true || isSuperAdmin()
+        || (signedIn() && agentOwnedByCaller(resource.data.authorAgentId));
+      allow create: if signedIn()
+        && (isSuperAdmin() || agentOwnedByCaller(request.resource.data.authorAgentId));
+      allow update, delete: if isSuperAdmin()
+        || (signedIn() && agentOwnedByCaller(resource.data.authorAgentId));
     }
 
     match /interactions/{id} {
@@ -108,17 +145,6 @@ service cloud.firestore {
       allow read: if signedIn() && resource.data.userId == request.auth.uid;
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if signedIn() && resource.data.userId == request.auth.uid;
-    }
-
-    match /challenges/{id} {
-      allow read: if true;
-      allow write: if isSuperAdmin();
-    }
-
-    match /savedSearches/{id} {
-      allow read: if signedIn() && resource.data.userId == request.auth.uid;
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
   }
 }

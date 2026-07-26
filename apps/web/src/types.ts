@@ -1,10 +1,11 @@
 /**
- * @deprecated These types are the prototype-era shapes used by the current
- * UI components (`ListingCard`, `UserDashboard`, etc.). The authoritative
- * domain model lives in `src/domain/` and will replace these types as
- * components are migrated in Phases 1 and 2.
+ * @deprecated These types are UI DTOs for prototype-era components
+ * (`ListingCard`, `UserDashboard`, etc.). Firestore shapes live in `src/domain/`.
  *
- * Do NOT add new types here. Add them to `src/domain/` instead.
+ * - `Listing` — feed/card DTO produced by `services/mappers.ts` (not stored).
+ * - `UserProfile` — UI view of `User` + optional `Agent` (see `userMappers.ts`).
+ *
+ * Do NOT add new Firestore fields here. Add them to `src/domain/` instead.
  */
 
 export enum ListingType {
@@ -22,12 +23,18 @@ export interface UserStats {
   projectsCreated: number;
 }
 
+/** Persona label for UI filters / badges (maps from Agent.kind). */
+export type PersonaUiRole = 'ARTIST' | 'ORGANIZER' | 'VISITOR' | 'SUPER_ADMIN';
+
+export type PlatformRole = 'member' | 'admin' | 'moderator' | 'super_admin';
+
 export interface UserProfile {
   id: string;
   name: string;
   email?: string;
   handle: string;
-  role: 'ARTIST' | 'ORGANIZER' | 'VISITOR' | 'SUPER_ADMIN';
+  /** @deprecated Prefer `agentKind` — kept for UI filters. */
+  role: PersonaUiRole;
   bio: string;
   location: string;
   avatarUrl: string;
@@ -39,6 +46,9 @@ export interface UserProfile {
     portfolio?: string;
   };
   joinDate: string;
+  agentId?: string | null;
+  agentKind?: string | null;
+  platformRole?: PlatformRole;
 }
 
 export interface Listing {
@@ -77,16 +87,4 @@ export interface Listing {
     };
   };
   sponsored?: boolean;
-}
-
-export interface Category {
-  id: string;
-  label: string;
-  icon: string;
-}
-
-export interface FilterState {
-  category: string;
-  searchQuery: string;
-  viewMode: 'grid' | 'map';
 }

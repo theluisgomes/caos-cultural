@@ -24,8 +24,8 @@ export function useUpdateUserProfile() {
         await mockAuth.updateProfile(profile);
         return profile;
       }
-      await saveUserProfile(getFirestoreInstance(), profile);
-      return profile;
+      const saved = await saveUserProfile(getFirestoreInstance(), profile);
+      return saved;
     },
     onSuccess: profile => {
       qc.setQueryData(['userProfile', profile.id], profile);
