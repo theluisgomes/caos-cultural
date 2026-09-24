@@ -1,0 +1,8 @@
+{
+  "generatedAt": "2026-09-22T22:00:00.000Z",
+  "note": "Auto-scraped place/neighborhood photos were removed — homonym matches were unreliable. Prefer event coverUrl, Street View (VITE_GOOGLE_MAPS_API_KEY), or branded SVG covers. Manual curated entries may be added here later with exact keys only.",
+  "places": {},
+  "streets": {},
+  "neighborhoods": {},
+  "cities": {}
+}

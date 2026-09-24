@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ListingDetails } from '../components/ListingDetails';
 import { useListing } from '../hooks/useListings';
-import { Listing } from '../types';
+import { Listing, ListingType } from '../types';
 
 interface LocationState {
   listing?: Listing;
@@ -21,6 +21,14 @@ export const ListingDetailsPage: React.FC = () => {
   }
 
   if (!listing) return <Navigate to="/" replace />;
+
+  // Espaços e eventos têm páginas dedicadas (fase 4); links legados continuam funcionando.
+  if (listing.type === ListingType.SPACE) {
+    return <Navigate to={`/espaco/${listing.id}`} replace state={{ listing }} />;
+  }
+  if (listing.type === ListingType.EVENT || listing.type === ListingType.EXPERIENCE) {
+    return <Navigate to={`/evento/${listing.id}`} replace state={{ listing }} />;
+  }
 
   return (
     <ListingDetails

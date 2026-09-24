@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, User, X, LogIn, PlusCircle, Info, HelpCircle, LogOut } from 'lucide-react';
+import { Search, Menu, User, X, LogIn, PlusCircle, Info, HelpCircle, LogOut, Compass } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../lib/i18n';
 
@@ -76,6 +76,8 @@ export const Header: React.FC = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-4 text-zinc-300">
+          <Link to="/descobrir" className="font-medium text-sm hover:bg-zinc-800 px-3 py-2 rounded-full">{t('explore')}</Link>
+          <Link to="/feed" className="font-medium text-sm hover:bg-zinc-800 px-3 py-2 rounded-full">{t('feed')}</Link>
           <Link to="/eventos" className="font-medium text-sm hover:bg-zinc-800 px-3 py-2 rounded-full">{t('events')}</Link>
           <Link to="/agentes" className="font-medium text-sm hover:bg-zinc-800 px-3 py-2 rounded-full">{t('agents')}</Link>
           <Link to="/espacos" className="font-medium text-sm hover:bg-zinc-800 px-3 py-2 rounded-full">{t('spaces')}</Link>
@@ -135,6 +137,7 @@ export const Header: React.FC = () => {
 
           {mobileMenuOpen && (
             <div className="absolute top-full right-4 mt-2 w-64 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl shadow-black/60 p-3 space-y-1 animate-in slide-in-from-top-2 duration-200">
+              {navBtn('Descobrir', <Compass size={16} className="text-brand-500" />, () => go('/descobrir'))}
               {navBtn('Sobre o CAOS', <Info size={16} className="text-brand-500" />, () => go('/about'))}
               {navBtn('FAQ', <HelpCircle size={16} className="text-purple-400" />, () => go('/faq'))}
               {navBtn('+ Criar projeto', <PlusCircle size={16} className="text-emerald-400" />, () => go('/create'))}

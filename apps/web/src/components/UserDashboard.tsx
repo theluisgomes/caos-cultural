@@ -11,6 +11,7 @@ import {
   LogOut,
   Map as MapIcon,
   MapPin,
+  Network,
   Plus,
   Settings,
   Share2,
@@ -18,6 +19,8 @@ import {
 import { ListingCard } from './ListingCard';
 import { MapVisualizer } from './MapVisualizer';
 import { ReputationBadges } from './reputation/ReputationBadges';
+import { EndorsementBadges } from './reputation/EndorsementBadges';
+import { NetworkTab } from './profile/NetworkTab';
 import { useLists } from '../hooks/useLists';
 import { useAgenda } from '../hooks/useAgenda';
 
@@ -28,7 +31,7 @@ interface UserDashboardProps {
   onLogout?: () => void | Promise<void>;
 }
 
-type ProfileTab = 'portfolio' | 'agenda' | 'lists' | 'map';
+type ProfileTab = 'portfolio' | 'agenda' | 'lists' | 'map' | 'network';
 
 const calendarDays = [
   { day: '18', week: 'SEG' },
@@ -215,6 +218,21 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
               </div>
             </div>
 
+            {/* Stats — no topo, ao lado do avatar (estilo IG) */}
+            <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3">
+                {[
+                  { label: 'Seguidores', value: user.stats.followers },
+                  { label: 'Criações', value: user.stats.projectsCreated },
+                  { label: 'Eventos', value: user.stats.eventsAttended },
+                  { label: 'Check-ins', value: personalMapPins.reduce((sum, pin) => sum + pin.visits, 0) },
+                ].map(stat => (
+                  <div key={stat.label} className="text-left">
+                    <div className="text-2xl font-black leading-none text-white">{stat.value}</div>
+                    <div className="mt-1 text-[11px] uppercase tracking-wider text-zinc-500">{stat.label}</div>
+                  </div>
+                ))}
+            </div>
+
             <p className="mt-6 text-zinc-300 max-w-2xl leading-relaxed font-light text-lg">
               {user.bio}
             </p>
@@ -227,26 +245,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
                 ))}
             </div>
 
-            {/* Stats */}
-            <div className="flex gap-8 mt-8 py-6 border-y border-zinc-900">
-                <div className="text-center md:text-left">
-                    <div className="text-2xl font-black text-white">{user.stats.followers}</div>
-                    <div className="text-xs text-zinc-500 uppercase tracking-wider">Seguidores</div>
-                </div>
-                <div className="text-center md:text-left">
-                    <div className="text-2xl font-black text-white">{user.stats.projectsCreated}</div>
-                    <div className="text-xs text-zinc-500 uppercase tracking-wider">Criações</div>
-                </div>
-                <div className="text-center md:text-left">
-                    <div className="text-2xl font-black text-white">{user.stats.eventsAttended}</div>
-                    <div className="text-xs text-zinc-500 uppercase tracking-wider">Eventos</div>
-                </div>
-                <div className="text-center md:text-left">
-                    <div className="text-2xl font-black text-white">{personalMapPins.reduce((sum, pin) => sum + pin.visits, 0)}</div>
-                    <div className="text-xs text-zinc-500 uppercase tracking-wider">Check-ins</div>
-                </div>
-            </div>
-            <ReputationBadges eventsAttended={user.stats.eventsAttended} className="mt-4" />
+            <ReputationBadges eventsAttended={user.stats.eventsAttended} className="mt-6" />
+            {myListings[0] && (
+              <EndorsementBadges target={myListings[0]} targetType="agent" className="mt-3" />
+            )}
           </div>
         </div>
 
@@ -316,6 +318,13 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
             >
                 <MapIcon size={16} />
                 Mapa pessoal
+            </button>
+            <button
+                onClick={() => setActiveTab('network')}
+                className={tabClass('network')}
+            >
+                <Network size={16} />
+                Rede
             </button>
         </div>
 
@@ -459,6 +468,8 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user, myListings, 
                     </aside>
                 </div>
             )}
+
+            {activeTab === 'network' && <NetworkTab userId={user.id} myListings={myListings} />}
 
             {activeTab === 'map' && (
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">

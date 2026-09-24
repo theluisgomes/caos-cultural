@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
-import { Layers, MapPin, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Layers, MapPin, Route as RouteIcon, X } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useListings } from '../hooks/useListings';
 import { useAuth } from '../context/AuthContext';
+import { useCulturalRoute } from '../hooks/useCulturalRoutes';
 import { fetchSavedPlaces, saveMapPlace } from '../services/mapSavedPlaces';
 import { Listing, ListingType } from '../types';
 
@@ -12,19 +13,47 @@ const SAO_PAULO = { lat: -23.5505, lng: -46.6333 };
 
 type MapLayer = 'spaces' | 'events' | 'agents' | 'favorites';
 
+/** PT labels + marker colour per layer (estudo p. 9: "não mostrar tudo ao mesmo tempo"). */
+const LAYER_META: Record<MapLayer, { label: string; color: string }> = {
+  spaces: { label: 'Espaços', color: '#22d3ee' },
+  events: { label: 'Eventos', color: '#e11d48' },
+  agents: { label: 'Usuários', color: '#a855f7' },
+  favorites: { label: 'Meus favoritos', color: '#f59e0b' },
+};
+
+function layerOfListing(listing: Listing): MapLayer {
+  if (listing.type === ListingType.SPACE) return 'spaces';
+  if (listing.type === ListingType.EVENT) return 'events';
+  return 'agents';
+}
+
+/** Inline SVG pin so each type reads by colour without extra assets. */
+function pinIcon(color: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">
+    <path d="M15 39C15 39 28 24.5 28 14.5A13 13 0 1 0 2 14.5C2 24.5 15 39 15 39Z" fill="${color}" stroke="#09090b" stroke-width="2"/>
+    <circle cx="15" cy="14.5" r="4.5" fill="#09090b"/>
+  </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
 export const MapPage: React.FC = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
+  const routeLineRef = useRef<google.maps.Polyline | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const routeId = searchParams.get('rota') ?? undefined;
+  const { data: route } = useCulturalRoute(routeId);
   const { user } = useAuth();
   const { data: listings = [] } = useListings('all', 'all');
   const [selected, setSelected] = useState<Listing | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Começa com uma camada só — o estudo pede não mostrar tudo ao mesmo tempo.
   const [layers, setLayers] = useState<Record<MapLayer, boolean>>({
-    spaces: true,
+    spaces: false,
     events: true,
-    agents: true,
+    agents: false,
     favorites: false,
   });
   const [radiusKm, setRadiusKm] = useState(5);
@@ -68,10 +97,15 @@ export const MapPage: React.FC = () => {
 
         visibleListings.forEach(listing => {
           if (!listing.coordinates) return;
+          const layer = savedIds.has(listing.id) ? 'favorites' : layerOfListing(listing);
           const marker = new markerLib.Marker({
             map: mapInstance.current!,
             position: { lat: listing.coordinates.lat, lng: listing.coordinates.lng },
             title: listing.title,
+            icon: {
+              url: pinIcon(LAYER_META[layer].color),
+              scaledSize: new google.maps.Size(30, 40),
+            },
           });
           marker.addListener('click', () => setSelected(listing));
           markersRef.current.push(marker);
@@ -82,9 +116,44 @@ export const MapPage: React.FC = () => {
           position: SAO_PAULO,
           title: 'Centro da busca',
         });
+
+        // Camada Trajetos: desenha o roteiro salvo quando `?rota=<id>`.
+        routeLineRef.current?.setMap(null);
+        routeLineRef.current = null;
+
+        const path = (route?.stops ?? [])
+          .filter(stop => stop.geo)
+          .map(stop => ({ lat: stop.geo!.lat, lng: stop.geo!.lng }));
+
+        if (path.length > 1) {
+          routeLineRef.current = new google.maps.Polyline({
+            map: mapInstance.current!,
+            path,
+            strokeColor: '#e11d48',
+            strokeOpacity: 0.9,
+            strokeWeight: 4,
+          });
+        }
+
+        (route?.stops ?? []).forEach((stop, index) => {
+          if (!stop.geo) return;
+          const marker = new markerLib.Marker({
+            map: mapInstance.current!,
+            position: { lat: stop.geo.lat, lng: stop.geo.lng },
+            title: `${index + 1}. ${stop.label}`,
+            label: { text: String(index + 1), color: '#09090b', fontWeight: '700' },
+          });
+          markersRef.current.push(marker);
+        });
+
+        if (path.length) {
+          const bounds = new google.maps.LatLngBounds();
+          path.forEach(point => bounds.extend(point));
+          mapInstance.current!.fitBounds(bounds);
+        }
       })
       .catch(() => setError('Falha ao carregar Google Maps.'));
-  }, [visibleListings, radiusKm]);
+  }, [visibleListings, radiusKm, route]);
 
   const toggleLayer = (layer: MapLayer) => {
     setLayers(prev => ({ ...prev, [layer]: !prev[layer] }));
@@ -125,9 +194,20 @@ export const MapPage: React.FC = () => {
           <Layers size={16} /> Camadas
         </div>
         {(['spaces', 'events', 'agents', 'favorites'] as MapLayer[]).map(layer => (
-          <label key={layer} className="flex items-center justify-between text-xs text-zinc-400 capitalize">
-            {layer === 'favorites' ? 'Meus favoritos' : layer}
-            <input type="checkbox" checked={layers[layer]} onChange={() => toggleLayer(layer)} />
+          <label key={layer} className="flex items-center justify-between text-xs text-zinc-400">
+            <span className="flex items-center gap-2">
+              <span
+                className="inline-block h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: LAYER_META[layer].color }}
+              />
+              {LAYER_META[layer].label}
+            </span>
+            <input
+              type="checkbox"
+              className="accent-brand-500"
+              checked={layers[layer]}
+              onChange={() => toggleLayer(layer)}
+            />
           </label>
         ))}
         <div>
@@ -141,6 +221,15 @@ export const MapPage: React.FC = () => {
             className="w-full accent-brand-500"
           />
         </div>
+        {route && (
+          <div className="rounded-lg border border-brand-500/40 bg-brand-500/10 p-3">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-400">
+              <RouteIcon size={13} /> Trajeto
+            </div>
+            <p className="mt-1 text-sm font-bold text-white">{route.name}</p>
+            <p className="text-xs text-zinc-400">{route.stops.length} paradas</p>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => navigate('/rotas')}

@@ -1,10 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Calendar, Flame, Plus, Snowflake } from 'lucide-react';
+import { Calendar, CalendarRange, Download, Flame, List as ListIcon, Share2, Snowflake } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAgenda } from '../hooks/useAgenda';
 import type { AgendaItem } from '../domain/agenda';
 import { useListings } from '../hooks/useListings';
+import { AgendaCalendar } from '../components/agenda/AgendaCalendar';
+import {
+  AgendaItemActions,
+  agendaItemToCalendarEvent,
+} from '../components/agenda/AgendaItemActions';
+import { downloadIcs } from '../lib/calendarLinks';
 import { ListingType, type Listing } from '../types';
 
 type DatedAgendaItem = AgendaItem & { parsedStart: Date };
@@ -281,9 +287,12 @@ const AgendaHeatmap: React.FC<AgendaHeatmapProps> = ({ items }) => {
   );
 };
 
+type AgendaViewMode = 'list' | 'calendar';
+
 export const AgendaPage: React.FC = () => {
   const { user } = useAuth();
   const userId = user?.id ?? '';
+  const [viewMode, setViewMode] = useState<AgendaViewMode>('calendar');
   const { data: savedItems = [], isLoading: isAgendaLoading } = useAgenda(user?.id);
   const { data: eventListings = [], isLoading: isEventsLoading } = useListings('all', 'events');
 
@@ -321,50 +330,108 @@ export const AgendaPage: React.FC = () => {
     return acc;
   }, []);
 
+  const exportAll = () => {
+    downloadIcs(items.map(agendaItemToCalendarEvent), 'agenda-caos.ics');
+  };
+
+  const shareAgenda = async () => {
+    const url = `${window.location.origin}/agenda`;
+    await navigator.clipboard?.writeText(url);
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 px-4 pt-28 pb-20">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <h1 className="flex items-center gap-3 text-4xl font-black tracking-tighter text-white">
             <Calendar className="text-brand-500" /> Agenda Cultural
           </h1>
-          <button type="button" className="flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-sm font-bold text-white">
-            <Plus size={16} /> Compartilhar
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={exportAll}
+              className="flex items-center gap-2 rounded-full border border-zinc-700 px-4 py-2 text-xs font-bold uppercase tracking-wider text-zinc-200 hover:border-brand-500 hover:text-brand-500"
+            >
+              <Download size={14} /> Exportar .ics
+            </button>
+            <button
+              type="button"
+              onClick={shareAgenda}
+              className="flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-brand-500"
+            >
+              <Share2 size={14} /> Compartilhar
+            </button>
+          </div>
         </div>
-        <p className="mb-8 text-zinc-500">Organize roles, convide amigos e publique sua agenda cultural.</p>
+
+        <p className="mb-6 text-zinc-500">Organize roles, convide amigos e publique sua agenda cultural.</p>
+
+        <div className="mb-8 inline-flex gap-1 rounded-full border border-zinc-800 bg-zinc-900 p-1">
+          {([
+            ['calendar', 'Calendário', CalendarRange],
+            ['list', 'Lista', ListIcon],
+          ] as Array<[AgendaViewMode, string, typeof ListIcon]>).map(([id, label, Icon]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setViewMode(id)}
+              className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+                viewMode === id ? 'bg-brand-600 text-white' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Icon size={14} />
+              {label}
+            </button>
+          ))}
+        </div>
+
         {isLoading ? (
           <p className="text-zinc-600">Carregando...</p>
-        ) : items.length === 0 ? (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-            <div className="rounded-lg border border-dashed border-zinc-800 p-12 text-center text-zinc-500">
-              Ainda não encontramos eventos publicados para exibir na agenda.
-            </div>
-            <AgendaHeatmap items={items} />
-          </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
-            <section className="space-y-8">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-brand-500">Eventos salvos</p>
-                <h2 className="mt-1 text-2xl font-black tracking-tight text-white">{items.length} item(ns) entre salvos + plataforma</h2>
+            {viewMode === 'calendar' ? (
+              <AgendaCalendar
+                items={items}
+                renderItem={item => (
+                  <>
+                    <h4 className="text-lg font-bold text-white">{item.customTitle || 'Evento'}</h4>
+                    {item.customLocation && (
+                      <p className="text-sm text-zinc-500">{item.customLocation}</p>
+                    )}
+                    <AgendaItemActions item={item} className="mt-3" />
+                  </>
+                )}
+              />
+            ) : items.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-zinc-800 p-12 text-center text-zinc-500">
+                Ainda não encontramos eventos publicados para exibir na agenda.
               </div>
-              {groupedDays.map(day => (
-                <div key={day.key}>
-                  <h3 className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-600">{day.label}</h3>
-                  <div className="space-y-4">
-                    {day.items.map(item => (
-                      <div key={item.id} className="rounded-sm border-l-4 border-brand-500 bg-zinc-900 p-4">
-                        <div className="text-xs font-bold uppercase text-brand-500">{item.status}</div>
-                        <h4 className="text-lg font-bold text-white">{item.customTitle || 'Evento'}</h4>
-                        <p className="text-sm text-zinc-400">{dateTimeFormatter.format(item.parsedStart)}</p>
-                        {item.customLocation && <p className="text-sm text-zinc-500">{item.customLocation}</p>}
-                      </div>
-                    ))}
-                  </div>
+            ) : (
+              <section className="space-y-8">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-brand-500">Eventos salvos</p>
+                  <h2 className="mt-1 text-2xl font-black tracking-tight text-white">
+                    {items.length} item(ns) entre salvos + plataforma
+                  </h2>
                 </div>
-              ))}
-            </section>
+                {groupedDays.map(day => (
+                  <div key={day.key}>
+                    <h3 className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-600">{day.label}</h3>
+                    <div className="space-y-4">
+                      {day.items.map(item => (
+                        <div key={item.id} className="rounded-sm border-l-4 border-brand-500 bg-zinc-900 p-4">
+                          <div className="text-xs font-bold uppercase text-brand-500">{item.status}</div>
+                          <h4 className="text-lg font-bold text-white">{item.customTitle || 'Evento'}</h4>
+                          <p className="text-sm text-zinc-400">{dateTimeFormatter.format(item.parsedStart)}</p>
+                          {item.customLocation && <p className="text-sm text-zinc-500">{item.customLocation}</p>}
+                          <AgendaItemActions item={item} className="mt-3" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </section>
+            )}
             <div className="lg:sticky lg:top-28">
               <AgendaHeatmap items={items} />
             </div>

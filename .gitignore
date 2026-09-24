@@ -32,3 +32,4 @@ skills-lock.json
 
 # Firebase CLI placeholder output; production hosting uses dist/
 y/
+.firebase/

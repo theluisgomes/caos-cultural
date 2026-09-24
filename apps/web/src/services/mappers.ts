@@ -2,6 +2,7 @@ import type { Agent } from '../domain/agent';
 import type { Event } from '../domain/event';
 import type { Space } from '../domain/space';
 import type { Work } from '../domain/work';
+import { resolveContextualImage } from '../lib/contextualImage';
 import { Listing, ListingType } from '../types';
 
 function formatPriceBRL(value: number | null | undefined, free = false): string {
@@ -25,13 +26,24 @@ function formatEventDate(iso: string): string {
 }
 
 export function eventToListing(event: Event): Listing {
+  const location = event.locationLabel || event.subtitle || '';
+  const image = resolveContextualImage({
+    seed: event.id,
+    title: event.title,
+    eventCoverUrl: event.coverUrl,
+    location,
+    city: location.split(',').pop()?.trim() || null,
+    coordinates: event.geo,
+    trustCoordinates: Boolean(event.geo),
+  });
+
   return {
     id: event.id,
     type: ListingType.EVENT,
     title: event.title,
     subtitle: event.locationLabel || event.subtitle || 'Local a confirmar',
     description: event.description,
-    imageUrl: event.coverUrl || `https://picsum.photos/seed/${event.id}/600/400`,
+    imageUrl: image.url,
     price: formatPriceBRL(event.ticketing.priceFromBRL, event.ticketing.isFree),
     rating: 4.5 + (event.stats.likes % 5) / 10,
     reviews: event.stats.saves + event.stats.attended,
@@ -40,22 +52,44 @@ export function eventToListing(event: Event): Listing {
     tags: [...event.categories, ...event.tags],
     meta: {
       eventKind: event.kind,
-      city: event.locationLabel?.split(',').pop()?.trim(),
+      city: image.parts.city ?? location.split(',').pop()?.trim(),
+      neighborhood: image.parts.neighborhood ?? undefined,
       startsAt: event.startsAt,
       priceBRL: event.ticketing.priceFromBRL,
+      imageSource: image.level,
     },
     sponsored: event.tags?.includes('patrocinado') || event.categories?.includes('Patrocinado'),
   };
 }
 
 export function spaceToListing(space: Space): Listing {
+  const location = [
+    space.name,
+    space.address.street,
+    space.address.neighborhood,
+    space.address.city,
+  ]
+    .filter(Boolean)
+    .join(' - ');
+  const image = resolveContextualImage({
+    seed: space.id,
+    title: space.name,
+    eventCoverUrl: space.coverUrl || space.images?.[0],
+    location,
+    neighborhood: space.address.neighborhood,
+    city: space.address.city,
+    state: space.address.state,
+    coordinates: space.geo,
+    trustCoordinates: Boolean(space.geo),
+  });
+
   return {
     id: space.id,
     type: ListingType.SPACE,
     title: space.name,
     subtitle: `${space.address.neighborhood || space.address.city}, ${space.address.state}`,
     description: space.description,
-    imageUrl: space.coverUrl || `https://picsum.photos/seed/${space.id}/600/400`,
+    imageUrl: image.url,
     price: space.priceRange === 'free' ? 'Grátis' : 'Consulte',
     rating: 4.6,
     reviews: 40,
@@ -65,6 +99,7 @@ export function spaceToListing(space: Space): Listing {
       spaceKind: space.kind,
       city: space.address.city,
       neighborhood: space.address.neighborhood ?? undefined,
+      imageSource: image.level,
     },
   };
 }

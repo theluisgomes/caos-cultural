@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Listing, ListingType } from '../types';
-import { Star, Heart } from 'lucide-react';
+import { Star } from 'lucide-react';
+import { CardActions } from './interactions/CardActions';
 
 interface ListingCardProps {
   listing: Listing;
@@ -8,6 +9,13 @@ interface ListingCardProps {
 }
 
 export const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) => {
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const notify = (message: string) => {
+    setFeedback(message);
+    window.setTimeout(() => setFeedback(null), 2500);
+  };
+
   return (
     <div 
       onClick={onClick}
@@ -23,22 +31,26 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick }) =>
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
-        <button 
-          className="absolute top-3 right-3 p-2 text-white hover:scale-110 transition-transform z-10"
-          onClick={(e) => {
-            e.stopPropagation();
-            // Handle save/favorite logic here
-          }}
-        >
-          <Heart size={22} className="drop-shadow-md stroke-white hover:fill-white transition-colors" />
-        </button>
-        
+        {/* Ações por tipo de card (estudo p. 3) */}
+        <CardActions
+          listing={listing}
+          variant="overlay"
+          className="absolute bottom-3 left-3 right-3 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100 focus-within:opacity-100"
+          onDone={notify}
+        />
+
         {listing.type !== ListingType.EVENT && (
           <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md border border-white/10 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
-            {listing.type === ListingType.SPACE ? 'Espaço' : listing.type === ListingType.ARTIST ? 'Artista' : 'Experiência'}
+            {listing.type === ListingType.SPACE ? 'Espaço' : listing.type === ListingType.ARTIST ? 'Usuário' : 'Experiência'}
           </div>
         )}
       </div>
+
+      {feedback && (
+        <p className="rounded-lg border border-brand-500/40 bg-brand-500/10 px-3 py-2 text-xs text-brand-300">
+          {feedback}
+        </p>
+      )}
 
       {/* Content */}
       <div className="flex flex-col gap-1">

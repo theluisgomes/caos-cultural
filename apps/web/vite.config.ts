@@ -36,6 +36,16 @@ export default defineConfig(({ mode }) => {
                 handler: 'CacheFirst',
                 options: { cacheName: 'images-cache', expiration: { maxEntries: 50 } },
               },
+              {
+                urlPattern: /^https:\/\/(upload|thumb)\.wikimedia\.org\/.*/i,
+                handler: 'CacheFirst',
+                options: { cacheName: 'wiki-images-cache', expiration: { maxEntries: 120 } },
+              },
+              {
+                urlPattern: /^https:\/\/live\.staticflickr\.com\/.*/i,
+                handler: 'CacheFirst',
+                options: { cacheName: 'flickr-images-cache', expiration: { maxEntries: 80 } },
+              },
             ],
           },
         }),

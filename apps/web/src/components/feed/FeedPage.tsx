@@ -76,6 +76,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({
       navigate(`/obra/${listing.id}`, { state: { listing } });
       return;
     }
+    if (listing.type === ListingType.SPACE) {
+      navigate(`/espaco/${listing.id}`, { state: { listing } });
+      return;
+    }
+    if (listing.type === ListingType.EVENT || listing.type === ListingType.EXPERIENCE) {
+      navigate(`/evento/${listing.id}`, { state: { listing } });
+      return;
+    }
     navigate(`/listing/${listing.id}`, { state: { listing } });
   };
 
@@ -124,7 +132,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
         <FeedGrid listings={displayed} loading={isLoading} onListingClick={handleListingClick} journey={journey} />
       </main>
 
-      <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-40">
+      <div className="fixed bottom-24 md:bottom-10 left-1/2 transform -translate-x-1/2 z-40">
         <button
           onClick={() => setShowMap(true)}
           className="bg-white text-black px-6 py-3.5 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform flex items-center gap-2 font-bold text-sm tracking-wide"

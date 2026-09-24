@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useListing, useListings } from '../hooks/useListings';
 import { followTarget, unfollowTarget, fetchFollowing } from '../services/social';
+import { listingsToPublicAgenda } from '../services/agenda';
+import { AgendaItemActions } from '../components/agenda/AgendaItemActions';
 import { useAuth } from '../context/AuthContext';
 import { ListingType } from '../types';
 
@@ -23,9 +25,23 @@ export const AgentPersonaPage: React.FC = () => {
     });
   }, [user, id]);
 
+  const relatedEventsAll = useMemo(
+    () =>
+      listing
+        ? allListings.filter(
+            l => l.type === ListingType.EVENT && l.tags.some(t => listing.tags.includes(t))
+          )
+        : [],
+    [allListings, listing]
+  );
+  const publicAgenda = useMemo(
+    () => listingsToPublicAgenda(relatedEventsAll, id ?? 'perfil').slice(0, 6),
+    [relatedEventsAll, id]
+  );
+
   if (!listing) return <div className="min-h-screen bg-zinc-950 pt-32 text-center text-zinc-500">Carregando persona...</div>;
 
-  const relatedEvents = allListings.filter(l => l.type === ListingType.EVENT && l.tags.some(t => listing.tags.includes(t))).slice(0, 4);
+  const relatedEvents = relatedEventsAll.slice(0, 4);
   const relatedSpaces = allListings.filter(l => l.type === ListingType.SPACE).slice(0, 3);
   const relatedWorks = allListings.filter(l => l.type === ListingType.WORK && l.authorId === id).slice(0, 6);
 
@@ -92,7 +108,35 @@ export const AgentPersonaPage: React.FC = () => {
               </div>
             </div>
           )}
-          <Link to="/agenda" className="inline-block text-sm text-brand-500 font-bold">Agenda pública →</Link>
+          <div>
+            <h2 className="text-xs font-black uppercase tracking-widest text-zinc-600 mb-4">Agenda pública</h2>
+            {publicAgenda.length ? (
+              <div className="space-y-3">
+                {publicAgenda.map(item => (
+                  <div key={item.id} className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4">
+                    <p className="text-xs font-bold uppercase tracking-widest text-brand-500">
+                      {new Date(item.startsAt).toLocaleString('pt-BR', {
+                        day: '2-digit',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                    <h3 className="mt-1 font-bold text-white">{item.customTitle}</h3>
+                    {item.customLocation && <p className="text-sm text-zinc-500">{item.customLocation}</p>}
+                    <AgendaItemActions item={item} allowSaveToMine className="mt-3" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-dashed border-zinc-800 p-6 text-sm text-zinc-500">
+                Este perfil ainda não publicou eventos na agenda.
+              </p>
+            )}
+            <Link to="/agenda" className="mt-4 inline-block text-sm font-bold text-brand-500">
+              Abrir minha agenda →
+            </Link>
+          </div>
         </section>
 
         {user && (

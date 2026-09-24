@@ -3,13 +3,17 @@ import { FeedPage } from '../components/feed/FeedPage';
 import { CreativePrompts } from '../components/gamification/CreativePrompts';
 import { EventsHighlightCarousel } from '../components/home/EventsHighlightCarousel';
 
-export const ExplorarPage: React.FC = () => (
+/**
+ * Grid de descoberta — antigo "Explorar", renomeado para "Descobrir" (estudo p. 3).
+ * A página inicial (`/`) agora é o CAOS (deck por swipe), em `pages/CaosPage`.
+ */
+export const DescobrirPage: React.FC = () => (
   <>
     <EventsHighlightCarousel />
     <FeedPage
       journey="all"
-      title="Explorar"
-      subtitle="Descoberta ampla — eventos, agentes, espaços e obras em um só feed."
+      title="Descobrir"
+      subtitle="Descoberta ampla — eventos, usuários, espaços e obras em um só feed."
       compactHero
     />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
@@ -18,4 +22,5 @@ export const ExplorarPage: React.FC = () => (
   </>
 );
 
-export const HomePage: React.FC = () => <ExplorarPage />;
+/** @deprecated Alias mantido para a rota legada `/explorar`. */
+export const ExplorarPage = DescobrirPage;

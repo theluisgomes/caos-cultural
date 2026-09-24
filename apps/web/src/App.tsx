@@ -6,7 +6,8 @@ import { I18nProvider } from './lib/i18n';
 import { AppLayout } from './layouts/AppLayout';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginModal } from './components/LoginModal';
-import { HomePage, ExplorarPage } from './pages/HomePage';
+import { DescobrirPage } from './pages/HomePage';
+import { CaosPage } from './pages/CaosPage';
 import { EventosPage } from './pages/EventosPage';
 import { AgentesPage } from './pages/AgentesPage';
 import { EspacosPage } from './pages/EspacosPage';
@@ -27,6 +28,11 @@ import { VerificationPage } from './pages/VerificationPage';
 import { BoostPage } from './pages/BoostPage';
 import { RoutesPage } from './pages/RoutesPage';
 import { WorkDetailsPage } from './pages/WorkDetailsPage';
+import { SpaceProfilePage } from './pages/SpaceProfilePage';
+import { EventProfilePage } from './pages/EventProfilePage';
+import { CulturalProfilePage } from './pages/CulturalProfilePage';
+import { ActivityFeedPage } from './pages/ActivityFeedPage';
+import { RouteSharePage } from './pages/RouteSharePage';
 
 const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
@@ -74,16 +80,19 @@ const AppShell: React.FC = () => {
       <ScrollToTop />
       <Routes>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/explorar" element={<ExplorarPage />} />
+          <Route path="/" element={<CaosPage />} />
+          <Route path="/descobrir" element={<DescobrirPage />} />
+          <Route path="/explorar" element={<DescobrirPage />} />
           <Route path="/eventos" element={<EventosPage />} />
           <Route path="/agentes" element={<AgentesPage />} />
           <Route path="/espacos" element={<EspacosPage />} />
           <Route path="/obras" element={<ObrasPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/search" element={<SearchSwipePage />} />
+          <Route path="/feed" element={<ActivityFeedPage />} />
           <Route path="/agenda" element={<AgendaPage />} />
           <Route path="/rotas" element={<RoutesPage />} />
+          <Route path="/rota/:id" element={<RouteSharePage />} />
           <Route path="/pro" element={<ProPanelPage />} />
         </Route>
 
@@ -91,6 +100,9 @@ const AppShell: React.FC = () => {
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/listing/:id" element={<ListingDetailsPage />} />
         <Route path="/obra/:id" element={<WorkDetailsPage />} />
+        <Route path="/espaco/:id" element={<SpaceProfilePage />} />
+        <Route path="/evento/:id" element={<EventProfilePage />} />
+        <Route path="/perfil-cultural/:id" element={<CulturalProfilePage />} />
         <Route path="/agente/:id" element={<AgentPersonaPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/faq" element={<FaqPage />} />

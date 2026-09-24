@@ -79,6 +79,8 @@ export interface Listing {
     eventKind?: string;
     startsAt?: string;
     priceBRL?: number | null;
+    /** How the card image was resolved (event → street → branded). */
+    imageSource?: 'event' | 'street' | 'branded' | 'place' | 'neighborhood' | 'city' | 'fallback';
     identity?: {
       ageRange?: string | null;
       gender?: string | null;

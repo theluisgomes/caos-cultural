@@ -1,4 +1,5 @@
 import lacumbucaPayload from '../../data/lacumbuca-events.json';
+import { resolveContextualImage } from '../lib/contextualImage';
 import { Listing, ListingType } from '../types';
 
 interface LacumbucaEvent {
@@ -50,23 +51,37 @@ export function getLacumbucaListings(): Listing[] {
     const neighborhood = event.neighborhood ?? 'Rio de Janeiro';
     const price = event.isFree ? 'Grátis' : event.price ? `R$ ${event.price}` : 'Consulte';
 
+    const coordinates = rioCoordinate(seed + index);
+    const image = resolveContextualImage({
+      seed: event.id,
+      title: event.title,
+      location: event.location,
+      neighborhood,
+      city: event.city,
+      state: event.state,
+      // Synthetic jitter — never feed to Street View as if it were real.
+      coordinates,
+      trustCoordinates: false,
+    });
+
     return {
       id: event.id,
       type: ListingType.EVENT,
       title: event.title,
       subtitle: event.location,
       description: `Show/evento listado pelo La Cumbuca em ${neighborhood}, ${event.city}.`,
-      imageUrl: `https://picsum.photos/seed/${encodeURIComponent(event.id)}/600/400`,
+      imageUrl: image.url,
       price,
       rating: Number((4.4 + ((seed % 7) / 10)).toFixed(1)),
       reviews: 12 + (seed % 240),
       date: formatDate(event),
-      coordinates: rioCoordinate(seed + index),
+      coordinates,
       tags: ['Música', 'Show', 'Rio de Janeiro', neighborhood, 'La Cumbuca'].filter(Boolean),
       meta: {
         city: event.city,
         neighborhood,
         startsAt: event.startsAt ?? undefined,
+        imageSource: image.level,
       },
     };
   });

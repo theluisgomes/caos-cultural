@@ -67,7 +67,7 @@ export const ListingDetails: React.FC<ListingDetailsProps> = ({
                          listing.type === ListingType.SPACE ? 'Espaço Criativo' : 
                          listing.type === ListingType.ARTIST ? 'Perfil de Artista' : 'Experiência'}
                     </div>
-                    <h1 className="text-5xl font-black leading-none tracking-tight mb-2 text-white">{listing.title}</h1>
+                    <h1 className="text-3xl font-black leading-snug tracking-tight mb-2 text-white md:text-4xl">{listing.title}</h1>
                     <div className="flex items-center justify-between mt-4">
                         <p className="text-xl text-zinc-400 font-light">{listing.subtitle}</p>
                         <div className="flex items-center gap-1 text-brand-500 font-bold">

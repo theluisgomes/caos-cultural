@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "scrape:lacumbuca": "node scripts/scrape-lacumbuca.mjs"
+    "scrape:lacumbuca": "node scripts/scrape-lacumbuca.mjs",
+    "enrich:images": "node scripts/enrich-location-images.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
