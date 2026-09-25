@@ -91,14 +91,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({
     <>
       <section
         className={`relative px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-b border-zinc-800 ${
-          compactHero ? 'pt-6 pb-6' : 'pt-44 md:pt-36 pb-10'
+          compactHero ? 'pt-6 pb-6' : 'pt-16 pb-6 md:pt-36 md:pb-10'
         }`}
       >
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1
               className={`font-black tracking-tighter text-white uppercase ${
-                compactHero ? 'text-2xl md:text-3xl' : 'text-4xl md:text-6xl'
+                compactHero ? 'text-2xl md:text-3xl' : 'text-2xl leading-snug md:text-6xl'
               }`}
             >
               {title}

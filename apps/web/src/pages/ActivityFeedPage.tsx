@@ -40,13 +40,13 @@ export const ActivityFeedPage: React.FC = () => {
   const followingCount = activity.filter(item => item.fromFollowing).length;
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 pb-24 pt-44 text-zinc-100 sm:px-6 md:pt-36 lg:px-8">
+    <main className="min-h-screen bg-zinc-950 px-4 pb-8 pt-16 text-zinc-100 sm:px-6 md:pt-36 lg:px-8">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-brand-500/40 bg-brand-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.3em] text-brand-400">
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-brand-500/40 bg-brand-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.28em] text-brand-400 md:mb-3 md:px-4 md:py-2 md:text-xs md:tracking-[0.3em]">
           <Newspaper size={14} />
           Feed
         </div>
-        <h1 className="text-3xl font-black uppercase tracking-tighter text-white sm:text-5xl">
+        <h1 className="text-xl font-black uppercase leading-snug tracking-tight text-white sm:text-5xl">
           O que rolou na sua rede.
         </h1>
         <p className="mt-3 text-sm font-light text-zinc-400 sm:text-base">

@@ -8,10 +8,12 @@ export const AppLayout: React.FC = () => {
   return (
     <>
       <Header />
-      <div className="pb-20 md:pb-0">
+      <div className="pb-24 lg:pb-0">
         <Outlet />
       </div>
-      <Footer />
+      <div className="hidden lg:block">
+        <Footer />
+      </div>
       <BottomNav />
     </>
   );

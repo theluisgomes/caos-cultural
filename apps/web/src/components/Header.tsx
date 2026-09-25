@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, User, X, LogIn, PlusCircle, Info, HelpCircle, LogOut, Compass } from 'lucide-react';
+import { Menu, User, X, LogIn, PlusCircle, Info, HelpCircle, LogOut, Compass } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../lib/i18n';
 
@@ -69,13 +69,13 @@ export const Header: React.FC = () => {
   );
 
   return (
-    <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 py-4' : 'bg-transparent py-6'}`}>
+    <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 py-3 md:py-4' : 'bg-zinc-950/80 py-3 md:bg-transparent md:py-6'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         <div className="flex items-center cursor-pointer group" onClick={() => go('/')}>
-          <div className="text-white font-black text-3xl tracking-tighter group-hover:text-brand-500 transition-colors">CAOS</div>
+          <div className="text-white font-black text-2xl tracking-tight group-hover:text-brand-500 transition-colors md:text-3xl md:tracking-tighter">CAOS</div>
         </div>
 
-        <div className="hidden md:flex items-center gap-4 text-zinc-300">
+        <div className="hidden items-center gap-4 text-zinc-300 lg:flex">
           <Link to="/descobrir" className="font-medium text-sm hover:bg-zinc-800 px-3 py-2 rounded-full">{t('explore')}</Link>
           <Link to="/feed" className="font-medium text-sm hover:bg-zinc-800 px-3 py-2 rounded-full">{t('feed')}</Link>
           <Link to="/eventos" className="font-medium text-sm hover:bg-zinc-800 px-3 py-2 rounded-full">{t('events')}</Link>
@@ -126,7 +126,7 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        <div className="md:hidden flex items-center gap-3 relative" ref={menuRef}>
+        <div className="relative flex items-center gap-3 lg:hidden" ref={menuRef}>
           <button
             onClick={() => setMobileMenuOpen(prev => !prev)}
             className="flex items-center gap-2 border border-zinc-700 bg-zinc-900 rounded-full p-2 hover:border-zinc-500 transition-colors"
@@ -155,18 +155,6 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      <div className="md:hidden px-4 pb-3 mt-2">
-        <button
-          onClick={() => go('/search')}
-          className="flex w-full items-center bg-zinc-900 border border-zinc-800 rounded-full px-4 py-3 gap-3 shadow-sm text-left"
-        >
-          <Search size={20} className="text-zinc-400" />
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-zinc-200">Para onde vamos?</span>
-            <span className="text-xs text-zinc-500">Eventos • Espaços • Usuários</span>
-          </div>
-        </button>
-      </div>
     </header>
   );
 };

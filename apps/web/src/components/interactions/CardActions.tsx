@@ -25,7 +25,7 @@ interface CardActionsProps {
 const OVERLAY_BTN =
   'flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-md transition-colors hover:bg-brand-600 disabled:opacity-60';
 const INLINE_BTN =
-  'flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 px-4 py-2 text-xs font-bold uppercase tracking-wider text-zinc-200 transition-colors hover:border-brand-500 hover:text-brand-500 disabled:opacity-60';
+  'inline-flex max-w-full items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-200 transition-colors hover:border-brand-500 hover:text-brand-500 disabled:opacity-60 sm:px-3 sm:py-2 sm:text-[11px]';
 
 export const CardActions: React.FC<CardActionsProps> = ({
   listing,
@@ -130,7 +130,7 @@ export const CardActions: React.FC<CardActionsProps> = ({
             aria-pressed={isFollowing}
           >
             {isFollowing ? <Check size={14} /> : <UserPlus size={14} />}
-            {isFollowing ? 'Seguindo' : 'Seguir'}
+            <span>{isFollowing ? 'Seguindo' : 'Seguir'}</span>
           </button>
         );
       case 'save_agenda':
@@ -146,7 +146,8 @@ export const CardActions: React.FC<CardActionsProps> = ({
             className={`${btnClass} ${done.save_agenda ? 'text-brand-400' : ''}`}
           >
             {done.save_agenda ? <Check size={14} /> : <CalendarPlus size={14} />}
-            {done.save_agenda ? 'Na agenda' : 'Salvar em Agenda'}
+            <span className="sm:hidden">{done.save_agenda ? 'Agenda' : 'Agenda'}</span>
+            <span className="hidden sm:inline">{done.save_agenda ? 'Na agenda' : 'Salvar em Agenda'}</span>
           </button>
         );
       case 'save_map':
@@ -162,7 +163,8 @@ export const CardActions: React.FC<CardActionsProps> = ({
             className={`${btnClass} ${done.save_map ? 'text-brand-400' : ''}`}
           >
             {done.save_map ? <Check size={14} /> : <MapPin size={14} />}
-            {done.save_map ? 'No mapa' : 'Salvar no mapa'}
+            <span className="sm:hidden">{done.save_map ? 'Mapa' : 'Mapa'}</span>
+            <span className="hidden sm:inline">{done.save_map ? 'No mapa' : 'Salvar no mapa'}</span>
           </button>
         );
       case 'save_list':
@@ -180,7 +182,8 @@ export const CardActions: React.FC<CardActionsProps> = ({
               aria-expanded={listPickerOpen}
             >
               {done.save_list ? <Check size={14} /> : <BookmarkPlus size={14} />}
-              {done.save_list ? 'Salvo' : 'Salvar em Listas'}
+              <span className="sm:hidden">{done.save_list ? 'Salvo' : 'Listas'}</span>
+              <span className="hidden sm:inline">{done.save_list ? 'Salvo' : 'Salvar em Listas'}</span>
             </button>
             {listPickerOpen && (
               <div

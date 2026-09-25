@@ -25,7 +25,7 @@ export const BottomNav: React.FC = () => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-md md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-md lg:hidden"
       aria-label="Navegação principal"
     >
       <div className="mx-auto flex max-w-lg items-end px-2 pb-[env(safe-area-inset-bottom)]">

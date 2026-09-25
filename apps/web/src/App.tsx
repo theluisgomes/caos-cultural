@@ -1,9 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { I18nProvider } from './lib/i18n';
 import { AppLayout } from './layouts/AppLayout';
+import { BottomNav } from './components/nav/BottomNav';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginModal } from './components/LoginModal';
 import { DescobrirPage } from './pages/HomePage';
@@ -98,18 +99,29 @@ const AppShell: React.FC = () => {
 
         <Route path="/profile/edit" element={<EditProfilePage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/listing/:id" element={<ListingDetailsPage />} />
-        <Route path="/obra/:id" element={<WorkDetailsPage />} />
-        <Route path="/espaco/:id" element={<SpaceProfilePage />} />
-        <Route path="/evento/:id" element={<EventProfilePage />} />
-        <Route path="/perfil-cultural/:id" element={<CulturalProfilePage />} />
-        <Route path="/agente/:id" element={<AgentPersonaPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/faq" element={<FaqPage />} />
-        <Route path="/create" element={<CreatePage />} />
-        <Route path="/mapa" element={<MapPage />} />
-        <Route path="/verificacao" element={<VerificationPage />} />
-        <Route path="/turbinar" element={<BoostPage />} />
+        <Route
+          element={
+            <>
+              <div className="pb-24 lg:pb-0">
+                <Outlet />
+              </div>
+              <BottomNav />
+            </>
+          }
+        >
+          <Route path="/listing/:id" element={<ListingDetailsPage />} />
+          <Route path="/obra/:id" element={<WorkDetailsPage />} />
+          <Route path="/espaco/:id" element={<SpaceProfilePage />} />
+          <Route path="/evento/:id" element={<EventProfilePage />} />
+          <Route path="/perfil-cultural/:id" element={<CulturalProfilePage />} />
+          <Route path="/agente/:id" element={<AgentPersonaPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/faq" element={<FaqPage />} />
+          <Route path="/create" element={<CreatePage />} />
+          <Route path="/mapa" element={<MapPage />} />
+          <Route path="/verificacao" element={<VerificationPage />} />
+          <Route path="/turbinar" element={<BoostPage />} />
+        </Route>
       </Routes>
 
       <GlobalLoginModal />

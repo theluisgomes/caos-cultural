@@ -340,10 +340,10 @@ export const AgendaPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 px-4 pt-28 pb-20">
+    <div className="min-h-screen bg-zinc-950 px-4 pt-16 pb-8 md:pt-28 md:pb-20">
       <div className="mx-auto max-w-6xl">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="flex items-center gap-3 text-4xl font-black tracking-tighter text-white">
+          <h1 className="flex items-center gap-3 text-2xl font-black leading-snug tracking-tight text-white md:text-4xl md:tracking-tighter">
             <Calendar className="text-brand-500" /> Agenda Cultural
           </h1>
           <div className="flex flex-wrap items-center gap-2">

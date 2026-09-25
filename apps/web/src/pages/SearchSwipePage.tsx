@@ -192,18 +192,18 @@ export const SearchSwipePage: React.FC = () => {
   );
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 pb-24 pt-44 text-zinc-100 sm:px-6 md:pt-36 lg:px-8">
+    <main className="min-h-screen bg-zinc-950 px-3 pb-8 pt-16 text-zinc-100 sm:px-6 lg:px-8 lg:pt-36">
       <section className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="mb-4 flex flex-col gap-3 md:mb-8 md:flex-row md:items-end md:justify-between md:gap-4">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-brand-500/40 bg-brand-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.3em] text-brand-400">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-brand-500/40 bg-brand-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.28em] text-brand-400 md:mb-3 md:px-4 md:py-2 md:text-xs md:tracking-[0.3em]">
               <Sparkles size={14} />
               Buscar
             </div>
-            <h1 className="max-w-4xl text-2xl font-black uppercase leading-snug tracking-tight text-white sm:text-3xl md:text-4xl">
+            <h1 className="max-w-4xl text-xl font-black uppercase leading-snug tracking-tight text-white sm:text-3xl md:text-4xl">
               Busca com filtro, card por card.
             </h1>
-            <p className="mt-5 max-w-2xl text-sm font-light leading-relaxed text-zinc-400 sm:text-base">
+            <p className="mt-2 hidden max-w-2xl text-sm font-light leading-relaxed text-zinc-400 sm:mt-5 sm:block sm:text-base">
               Filtre tipo, característica, distância e disponibilidade — e avance como um feed de matches.
             </p>
           </div>

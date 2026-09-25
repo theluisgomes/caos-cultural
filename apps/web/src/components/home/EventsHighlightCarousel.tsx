@@ -264,7 +264,7 @@ export const EventsHighlightCarousel: React.FC<EventsHighlightCarouselProps> = (
   const maxOffset = isDesktop ? 1 : 1;
 
   return (
-    <section className="bg-zinc-950 border-b border-zinc-800 pt-44 md:pt-28 pb-14">
+    <section className="bg-zinc-950 border-b border-zinc-800 pt-16 pb-10 md:pt-28 md:pb-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row gap-3 mb-10">
           <form

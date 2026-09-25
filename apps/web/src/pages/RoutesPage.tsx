@@ -135,7 +135,7 @@ export const RoutesPage: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-5xl bg-zinc-950 px-4 pb-24 pt-28 sm:px-6 lg:px-8">
+    <div className="mx-auto min-h-screen max-w-5xl bg-zinc-950 px-4 pb-8 pt-16 sm:px-6 md:pb-24 md:pt-28 lg:px-8">
       <h1 className="mb-2 flex items-center gap-3 text-4xl font-black tracking-tighter text-white">
         <RouteIcon className="text-brand-500" /> Rotas culturais
       </h1>

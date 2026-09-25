@@ -30,7 +30,7 @@ export const FeedControls: React.FC<FeedControlsProps> = ({
 
   return (
     <div className={className}>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         <button
           type="button"
           onClick={() => act(() => boostTag(user!.id, sampleTag), 'Mais conteúdo deste tipo')}

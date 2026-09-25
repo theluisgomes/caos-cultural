@@ -135,19 +135,19 @@ export const EventProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-zinc-950 pb-24 text-zinc-100">
-      <div className="relative h-72 md:h-96">
+      <div className="relative h-52 md:h-96">
         <img src={heroSrc} alt="" className="h-full w-full object-cover opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="absolute left-4 top-24 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md md:top-28"
+          className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md md:top-28"
         >
           <ArrowLeft size={16} /> Voltar
         </button>
       </div>
 
-      <div className="mx-auto -mt-20 max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto -mt-8 max-w-5xl px-4 sm:px-6 md:-mt-20 lg:px-8">
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded bg-brand-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
             Evento
