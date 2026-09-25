@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BadgeCheck, Heart, Layers, MapPin, RotateCcw, Search, Star, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -29,6 +29,25 @@ interface SwipeDeckProps {
   emptyHint?: string;
 }
 
+type SwipeAction = 'pass' | 'like' | 'super';
+
+const DISTANCE_THRESHOLD = 96;
+const VELOCITY_THRESHOLD = 0.62;
+const TAP_SLOP = 10;
+const EXIT_MS = 340;
+
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && Boolean(target.closest('button, a, input, select, textarea, [role="button"]'));
+}
+
+function haptic(ms = 12) {
+  try {
+    navigator.vibrate?.(ms);
+  } catch {
+    /* ignore */
+  }
+}
+
 export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   listings,
   loading = false,
@@ -42,6 +61,24 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   const [passed, setPassed] = useState<string[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [drag, setDrag] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const [leaving, setLeaving] = useState<SwipeAction | null>(null);
+
+  const pointer = useRef({
+    id: -1,
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    lastY: 0,
+    lastT: 0,
+    vx: 0,
+    vy: 0,
+    active: false,
+    crossed: false,
+  });
+  const dragRef = useRef({ x: 0, y: 0 });
+  const leavingTimer = useRef<number | null>(null);
 
   useEffect(() => {
     setIndex(0);
@@ -56,31 +93,80 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [queueOpen]);
 
+  useEffect(() => {
+    return () => {
+      if (leavingTimer.current) window.clearTimeout(leavingTimer.current);
+    };
+  }, []);
+
   const deck = useMemo(() => listings.filter(l => !passed.includes(l.id)), [listings, passed]);
   const active = deck[index % Math.max(deck.length, 1)];
+  const next = deck[(index % Math.max(deck.length, 1)) + 1];
   const upcoming = deck.slice(index + 1, index + 6);
 
-  const move = async (action: 'pass' | 'like' | 'super') => {
-    if (!active) return;
-    if (!user) {
-      openLogin();
-      return;
-    }
+  const resetDrag = () => {
+    dragRef.current = { x: 0, y: 0 };
+    setDrag({ x: 0, y: 0 });
+    setDragging(false);
+    setLeaving(null);
+    pointer.current.active = false;
+    pointer.current.crossed = false;
+  };
 
-    if (action === 'pass') {
-      setPassed(prev => [...prev, active.id]);
-      setMessage(`Você passou ${active.title}.`);
-      await recordInteraction(user.id, 'ignore', targetTypeOf(active), active.id);
-    } else {
-      setLiked(prev => [...prev, active.id]);
-      setMessage(
-        action === 'super' ? `Super match enviado para ${active.title}.` : `Você curtiu ${active.title}.`
-      );
-      await recordInteraction(user.id, 'like', targetTypeOf(active), active.id);
-      setIndex(prev => prev + 1);
-      return;
-    }
-    setIndex(prev => prev);
+  const commit = useCallback(
+    async (action: SwipeAction, listing: Listing) => {
+      if (!user) {
+        openLogin();
+        resetDrag();
+        return;
+      }
+
+      if (action === 'pass') {
+        setPassed(prev => [...prev, listing.id]);
+        setMessage(`Você passou ${listing.title}.`);
+        await recordInteraction(user.id, 'ignore', targetTypeOf(listing), listing.id);
+        setIndex(prev => prev);
+      } else {
+        setLiked(prev => [...prev, listing.id]);
+        setMessage(
+          action === 'super' ? `Super match enviado para ${listing.title}.` : `Você curtiu ${listing.title}.`
+        );
+        await recordInteraction(user.id, 'like', targetTypeOf(listing), listing.id);
+        setIndex(prev => prev + 1);
+      }
+      resetDrag();
+    },
+    [openLogin, user]
+  );
+
+  const flyOff = useCallback(
+    (action: SwipeAction, listing: Listing, from?: { x: number; y: number }) => {
+      if (leaving) return;
+      if (!user) {
+        openLogin();
+        resetDrag();
+        return;
+      }
+      setLeaving(action);
+      setDragging(false);
+      const width = typeof window === 'undefined' ? 800 : window.innerWidth;
+      const height = typeof window === 'undefined' ? 800 : window.innerHeight;
+      const x = action === 'pass' ? -width * 1.15 : action === 'like' ? width * 1.15 : from?.x ?? 0;
+      const y = action === 'super' ? -height * 0.95 : (from?.y ?? 28) + 36;
+      dragRef.current = { x, y };
+      setDrag({ x, y });
+      haptic(18);
+      if (leavingTimer.current) window.clearTimeout(leavingTimer.current);
+      leavingTimer.current = window.setTimeout(() => {
+        void commit(action, listing);
+      }, EXIT_MS);
+    },
+    [commit, leaving, openLogin, user]
+  );
+
+  const move = (action: SwipeAction) => {
+    if (!active || leaving) return;
+    flyOff(action, active);
   };
 
   const openDetails = (listing: Listing) => {
@@ -106,7 +192,96 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     setPassed([]);
     setMessage('Deck reiniciado.');
     setQueueOpen(false);
+    resetDrag();
   };
+
+  const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    if (leaving || e.button !== 0 || isInteractiveTarget(e.target)) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const now = performance.now();
+    pointer.current = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      lastX: e.clientX,
+      lastY: e.clientY,
+      lastT: now,
+      vx: 0,
+      vy: 0,
+      active: true,
+      crossed: false,
+    };
+    setDragging(true);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    if (!pointer.current.active || e.pointerId !== pointer.current.id) return;
+    const now = performance.now();
+    const dt = Math.max(now - pointer.current.lastT, 8);
+    const x = e.clientX - pointer.current.startX;
+    const y = e.clientY - pointer.current.startY;
+    pointer.current.vx = (e.clientX - pointer.current.lastX) / dt;
+    pointer.current.vy = (e.clientY - pointer.current.lastY) / dt;
+    pointer.current.lastX = e.clientX;
+    pointer.current.lastY = e.clientY;
+    pointer.current.lastT = now;
+    const nextDrag = { x, y: y * 0.72 };
+    dragRef.current = nextDrag;
+    setDrag(nextDrag);
+
+    const intent = Math.max(Math.abs(x) / DISTANCE_THRESHOLD, Math.max(0, -y) / (DISTANCE_THRESHOLD + 20));
+    if (intent >= 1 && !pointer.current.crossed) {
+      pointer.current.crossed = true;
+      haptic(8);
+    } else if (intent < 0.75) {
+      pointer.current.crossed = false;
+    }
+  };
+
+  const onPointerUp = (e: React.PointerEvent<HTMLElement>) => {
+    if (!pointer.current.active || e.pointerId !== pointer.current.id) return;
+    pointer.current.active = false;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+
+    const { x, y } = dragRef.current;
+    const { vx, vy } = pointer.current;
+    const dist = Math.hypot(x, y);
+
+    if (dist < TAP_SLOP && Math.abs(vx) < 0.15 && active) {
+      resetDrag();
+      openDetails(active);
+      return;
+    }
+
+    if (!active) {
+      resetDrag();
+      return;
+    }
+
+    if (y < -DISTANCE_THRESHOLD || vy < -VELOCITY_THRESHOLD) {
+      flyOff('super', active, { x, y });
+      return;
+    }
+    if (x > DISTANCE_THRESHOLD || vx > VELOCITY_THRESHOLD) {
+      flyOff('like', active, { x, y });
+      return;
+    }
+    if (x < -DISTANCE_THRESHOLD || vx < -VELOCITY_THRESHOLD) {
+      flyOff('pass', active, { x, y });
+      return;
+    }
+
+    setDragging(false);
+    setDrag({ x: 0, y: 0 });
+  };
+
+  const rotate = drag.x * 0.06 + drag.y * 0.01;
+  const likeGlow = Math.min(1, Math.max(0, drag.x / 140));
+  const passGlow = Math.min(1, Math.max(0, -drag.x / 140));
+  const superGlow = Math.min(1, Math.max(0, -drag.y / 150));
+  const nextScale = 0.94 + Math.min(1, Math.hypot(drag.x, drag.y) / 220) * 0.06;
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-col items-center sm:max-w-md">
@@ -128,29 +303,64 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         <div className="h-[min(50dvh,22rem)] w-full animate-pulse rounded-2xl border border-zinc-800 bg-zinc-900/60" />
       ) : active ? (
         <div className="relative flex w-full min-w-0 flex-col">
-          <article
-            className="relative overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl shadow-black/50"
-            onTouchStart={e => {
-              (e.currentTarget as HTMLElement).dataset.tx = String(e.touches[0].clientX);
-            }}
-            onTouchEnd={e => {
-              const startX = Number((e.currentTarget as HTMLElement).dataset.tx);
-              const dx = e.changedTouches[0].clientX - startX;
-              if (dx < -60) move('pass');
-              else if (dx > 60) move('like');
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => openDetails(active)}
-              className="block w-full min-w-0 text-left"
+          <div className="relative w-full">
+            {next && (
+              <article
+                aria-hidden
+                className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900"
+                style={{ transform: `scale(${nextScale}) translateY(10px)`, transformOrigin: 'center bottom' }}
+              >
+                <img src={heroBackgroundUrl(next.imageUrl)} alt="" className="h-full w-full object-cover opacity-70" />
+              </article>
+            )}
+
+            <article
               aria-label={`Abrir ${active.title}`}
+              className="relative cursor-grab touch-none overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl shadow-black/50 active:cursor-grabbing"
+              style={{
+                transform: `translate3d(${drag.x}px, ${drag.y}px, 0) rotate(${rotate}deg)`,
+                transition: dragging ? 'none' : `transform ${EXIT_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                willChange: 'transform',
+              }}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerUp}
             >
+              <div
+                className="pointer-events-none absolute inset-0 z-10 rounded-2xl"
+                style={{ boxShadow: `inset 0 0 0 3px rgba(225,29,72,${likeGlow * 0.85})` }}
+              />
+              <div
+                className="pointer-events-none absolute inset-0 z-10 rounded-2xl"
+                style={{ boxShadow: `inset 0 0 0 3px rgba(239,68,68,${passGlow * 0.85})` }}
+              />
+
+              <div
+                className="pointer-events-none absolute left-4 top-14 z-20 rotate-[-14deg] rounded-lg border-2 border-red-400 px-3 py-1 text-sm font-black uppercase tracking-[0.2em] text-red-400"
+                style={{ opacity: passGlow }}
+              >
+                Passar
+              </div>
+              <div
+                className="pointer-events-none absolute right-4 top-14 z-20 rotate-[14deg] rounded-lg border-2 border-brand-400 px-3 py-1 text-sm font-black uppercase tracking-[0.2em] text-brand-400"
+                style={{ opacity: likeGlow }}
+              >
+                Curtir
+              </div>
+              <div
+                className="pointer-events-none absolute left-1/2 top-6 z-20 -translate-x-1/2 rounded-lg border-2 border-purple-300 px-3 py-1 text-sm font-black uppercase tracking-[0.2em] text-purple-300"
+                style={{ opacity: superGlow }}
+              >
+                Super
+              </div>
+
               <div className="relative h-[min(46dvh,20rem)] w-full sm:h-[min(50dvh,24rem)]">
                 <img
                   src={heroBackgroundUrl(active.imageUrl)}
                   alt={active.title}
-                  className="h-full w-full object-cover"
+                  className="pointer-events-none h-full w-full object-cover"
+                  draggable={false}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" />
                 <div className="absolute left-3 top-3 rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-black">
@@ -179,46 +389,46 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                   </div>
                 </div>
               </div>
-            </button>
 
-            <div className="min-w-0 space-y-2.5 p-3 sm:space-y-3 sm:p-4">
-              <p className="line-clamp-2 break-words text-sm font-light leading-relaxed text-zinc-300">
-                {active.description}
-              </p>
-              {active.tags.length > 0 && (
-                <div className="flex min-w-0 gap-1.5 overflow-hidden">
-                  {active.tags.slice(0, 3).map(tag => (
-                    <span
-                      key={tag}
-                      className="max-w-[9rem] truncate rounded-full border border-zinc-700 px-2.5 py-0.5 text-[11px] text-zinc-300"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-              <CardActions listing={active} variant="inline" onDone={setMessage} />
-            </div>
-          </article>
+              <div className="min-w-0 space-y-2.5 p-3 sm:space-y-3 sm:p-4">
+                <p className="line-clamp-2 break-words text-sm font-light leading-relaxed text-zinc-300">
+                  {active.description}
+                </p>
+                {active.tags.length > 0 && (
+                  <div className="flex min-w-0 gap-1.5 overflow-hidden">
+                    {active.tags.slice(0, 3).map(tag => (
+                      <span
+                        key={tag}
+                        className="max-w-[9rem] truncate rounded-full border border-zinc-700 px-2.5 py-0.5 text-[11px] text-zinc-300"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <CardActions listing={active} variant="inline" onDone={setMessage} />
+              </div>
+            </article>
+          </div>
 
           <div className="mt-3 flex items-center justify-center gap-2.5 sm:mt-4 sm:gap-3">
             <button
               onClick={() => move('pass')}
-              className="flex h-12 w-12 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-red-500 hover:text-red-400 sm:h-14 sm:w-14"
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-300 transition-transform hover:border-red-500 hover:text-red-400 active:scale-90 sm:h-14 sm:w-14"
               aria-label="Passar card"
             >
               <X size={22} />
             </button>
             <button
               onClick={() => move('super')}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-purple-500/60 bg-purple-500/10 text-purple-300 hover:bg-purple-500 hover:text-white sm:h-12 sm:w-12"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-purple-500/60 bg-purple-500/10 text-purple-300 transition-transform hover:bg-purple-500 hover:text-white active:scale-90 sm:h-12 sm:w-12"
               aria-label="Super match"
             >
               <Star size={18} />
             </button>
             <button
               onClick={() => move('like')}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-white shadow-[0_0_30px_rgba(225,29,72,0.45)] hover:bg-brand-500 sm:h-14 sm:w-14"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-white shadow-[0_0_30px_rgba(225,29,72,0.45)] transition-transform hover:bg-brand-500 active:scale-90 sm:h-14 sm:w-14"
               aria-label="Curtir card"
             >
               <Heart size={22} fill="currentColor" />

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   CalendarDays,
@@ -11,7 +11,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useListing, useListings } from '../hooks/useListings';
+import { useListings, useRoutedListing } from '../hooks/useListings';
 import { useAuth } from '../context/AuthContext';
 import { CardActions } from '../components/interactions/CardActions';
 import { AgendaItemActions } from '../components/agenda/AgendaItemActions';
@@ -59,11 +59,10 @@ function toAgendaItem(listing: Listing): AgendaItem | null {
 }
 
 export const EventProfilePage: React.FC = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user, openLogin } = useAuth();
-  const { data: event, isLoading } = useListing(id);
+  const { data: event, isLoading } = useRoutedListing();
   const { data: allListings = [] } = useListings('all', 'all');
   const [going, setGoing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);

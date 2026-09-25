@@ -89,21 +89,31 @@ export async function fetchListings(
 }
 
 export async function fetchListingById(id: string): Promise<Listing | null> {
+  const decoded = decodeURIComponent(id);
+
   if (isFirebaseConfigured()) {
-    const db = getFirestoreInstance();
-    for (const col of ['events', 'spaces', 'agents', 'works'] as const) {
-      const snap = await getDoc(doc(db, col, id));
-      if (!snap.exists()) continue;
-      const data = { id: snap.id, ...snap.data() };
-      if (col === 'events') return eventToListing(data as Event);
-      if (col === 'spaces') return spaceToListing(data as Space);
-      if (col === 'agents') return agentToListing(data as Agent);
-      if (col === 'works') return workToListing(data as Work);
+    try {
+      const db = getFirestoreInstance();
+      for (const col of ['events', 'spaces', 'agents', 'works'] as const) {
+        const snap = await getDoc(doc(db, col, decoded));
+        if (!snap.exists()) continue;
+        const data = { id: snap.id, ...snap.data() };
+        try {
+          if (col === 'events') return eventToListing(data as Event);
+          if (col === 'spaces') return spaceToListing(data as Space);
+          if (col === 'agents') return agentToListing(data as Agent);
+          if (col === 'works') return workToListing(data as Work);
+        } catch (err) {
+          console.warn(`Failed to map ${col}/${decoded}:`, err);
+        }
+      }
+    } catch (err) {
+      console.warn('Firestore get by id failed, using catalog fallback:', err);
     }
   }
 
   const all = await fetchListings('all', 'all');
-  return all.find(l => l.id === id) ?? null;
+  return all.find(l => l.id === decoded || l.id === id) ?? null;
 }
 
 export function applySearchFilters(listings: Listing[], filters: SearchFilters): Listing[] {

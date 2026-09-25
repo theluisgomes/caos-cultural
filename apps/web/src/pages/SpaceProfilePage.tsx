@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   CalendarDays,
@@ -9,7 +9,7 @@ import {
   MapPin,
   Users,
 } from 'lucide-react';
-import { useListing, useListings } from '../hooks/useListings';
+import { useListings, useRoutedListing } from '../hooks/useListings';
 import { CardActions } from '../components/interactions/CardActions';
 import { ListingType, type Listing } from '../types';
 import { heroBackgroundUrl } from '../lib/contextualImage';
@@ -56,9 +56,8 @@ function eventsOfSpace(listings: Listing[], space: Listing): Listing[] {
 }
 
 export const SpaceProfilePage: React.FC = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const { data: space, isLoading } = useListing(id);
+  const { data: space, isLoading } = useRoutedListing();
   const { data: allListings = [] } = useListings('all', 'all');
   const [tab, setTab] = useState<SpaceTab>('about');
 

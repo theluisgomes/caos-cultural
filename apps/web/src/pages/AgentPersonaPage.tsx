@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useListing, useListings } from '../hooks/useListings';
+import { useListings, useRoutedListing } from '../hooks/useListings';
 import { followTarget, unfollowTarget, fetchFollowing } from '../services/social';
 import { listingsToPublicAgenda } from '../services/agenda';
 import { AgendaItemActions } from '../components/agenda/AgendaItemActions';
@@ -9,7 +9,7 @@ import { ListingType } from '../types';
 
 export const AgentPersonaPage: React.FC = () => {
   const { id } = useParams();
-  const { data: listing } = useListing(id);
+  const { data: listing } = useRoutedListing();
   const { data: allListings = [] } = useListings('all', 'all');
   const { user } = useAuth();
   const [following, setFollowing] = useState(false);

@@ -1,15 +1,14 @@
 import React from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { ListingDetails } from '../components/ListingDetails';
 import { ProjectMetrics } from '../components/metrics/ProjectMetrics';
 import { EndorsementBadges } from '../components/reputation/EndorsementBadges';
-import { useListing } from '../hooks/useListings';
+import { useRoutedListing } from '../hooks/useListings';
 import { ListingType } from '../types';
 
 export const WorkDetailsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const { data: listing, isLoading } = useListing(id);
+  const { data: listing, isLoading } = useRoutedListing();
 
   if (isLoading) {
     return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-500">Carregando obra...</div>;
